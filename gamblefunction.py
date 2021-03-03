@@ -46,7 +46,7 @@ def dicebattle(channel, args, authinfo, dbpass):
                               color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
-        embed.add_field(name="```도움말```", value="다이스배틀은 주사위게임의 일종입니다. 확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
+        embed.add_field(name="```도움말```", value="다이스배틀은 주사위게임의 일종입니다. 베팅은 10~5000 LP만 가능합니다. 확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
         embed.add_field(name="```사용법 : !라피 도박 다이스배틀 (베팅금)```",
                         value="워리어스 라이즈 오브 글로리에 나온 여관 도박을 바탕으로 합니다.\n주사위를 굴릴 시 최대 5개까지 굴립니다." +
                               "\n주사위를 전부 소모하지 않아도 던지는걸 중단할 수 있습니다.\n최종적으로 상대보다 체력이 많으면 승리합니다.\n주사위의 눈은 다음과 같습니다." +
@@ -65,6 +65,8 @@ def dicebattle(channel, args, authinfo, dbpass):
 def dicegame(channel, bet, authinfo, dbpass):
     if authinfo["POINTS"] < bet:
         return channel.send("지휘관...포인트가 모자라...")
+    if not 10 <= bet <= 5000:
+        return channel.send("지휘관...베팅은 10~5000 LP만 가능해...")
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     db = mclient.Laffey
     if db.Gamble.find_one({"GAME": "DICEBATTLE"})["PLAYING"] is True:
@@ -259,7 +261,7 @@ def updown(channel, args, authinfo, dbpass):
                               color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
-        embed.add_field(name="```도움말```", value="업다운은 카드게임의 일종입니다. 확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
+        embed.add_field(name="```도움말```", value="업다운은 카드게임의 일종입니다. 베팅은 10~5000 LP만 가능합니다. 확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
         embed.add_field(name="```사용법 : !라피 도박 업다운 (베팅금)```",
                         value="말 그대로 다음 카드가 높은가 낮은가를 맞추는 게임입니다.\n최대 4중첩까지 가능합니다.\n동일하면 그냥 넘어갑니다." +
                               "\n적어도 두 번 이상 맞춰야 중단이 가능합니다.\n카드에 문양은 없습니다. A는 무조건 1입니다." +
@@ -275,6 +277,8 @@ def updown(channel, args, authinfo, dbpass):
 def updownstart(channel, bet, authinfo, dbpass):
     if authinfo["POINTS"] < bet:
         return channel.send("지휘관...포인트가 모자라...")
+    if not 10 <= bet <= 5000:
+        return channel.send("지휘관...베팅은 10~5000 LP만 가능해...")
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     db = mclient.Laffey
     if db.Gamble.find_one({"GAME": "UPDOWN"})["PLAYING"] is True:
@@ -373,6 +377,7 @@ async def updownonreact(reaction, user, dbpass):
                     embed.add_field(name="```결과 : %s / 베팅 : %s```" % (status, str(reaction.emoji)), value="베팅금 : %d LP / 배당금 : %d LP" % (game["BET"], game["WIN"]), inline=False)
                     embed.add_field(name="```카드 공개!```", value="\u200b\n%s %s %s %s %s\n\u200b" % (cards[0], cards[1], cards[2], cards[3], cards[4]), inline=False)
                     await reaction.message.edit(embed=embed)
+                    user = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
                     mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": user["POINTS"] + game["WIN"]}})
                     mclient.Laffey.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "NOONE", "STACK": 0, "WIN": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0, "C5": 0}})
                 else:
@@ -444,7 +449,7 @@ def blackjack(channel, args, authinfo, dbpass):
                               color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
-        embed.add_field(name="```도움말```", value="블랙잭은 카드게임의 일종입니다. 기본 100 포인트가 소비됩니다.\n확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
+        embed.add_field(name="```도움말```", value="블랙잭은 카드게임의 일종입니다. 베팅은 10~5000 LP 까지 가능합니다.\n확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
         embed.add_field(name="```사용법 : !라피 도박 블랙잭 (베팅금)```",
                         value="숫자 21에 최대한 가깝게 하는 것을 목표로 하며 더 가까운 측이 승리합니다.\n21이 넘어가면 Bust!가 됩니다.\n라피는 17 이상이 되지 않으면 계속 카드를 받아야 합니다." +
                               "\n처음 두장으로 21이 되면 Blackjack!으로 승리합니다.\n항복은 처음에만 가능합니다.\nJ,Q,K는 10이며 A는 1혹은 11로 턴마다 21에 가까운 쪽으로 적용됩니다." +
@@ -463,6 +468,8 @@ def blackjack(channel, args, authinfo, dbpass):
 def blackjackstart(channel, bet, authinfo, dbpass):
     if authinfo["POINTS"] < bet:
         return channel.send("지휘관...포인트가 모자라...")
+    if not 10 <= bet <= 5000:
+        return channel.send("지휘관...베팅은 10~5000 LP만 가능해...")
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     db = mclient.Laffey
     if db.Gamble.find_one({"GAME": "BLACKJACK"})["PLAYING"] is True:
@@ -497,10 +504,10 @@ async def blackjackonreact(reaction, user, dbpass):
             if str(reaction.emoji) == "▶" and game["FIRSTTURN"] is True:
                 await reaction.message.clear_reactions()
                 game["FIRSTTURN"] = False
-                game = carddraw(game, True)
-                game = carddraw(game, False)
-                game = carddraw(game, True)
-                game = carddraw(game, False)
+                game = bjcarddraw(game, True)
+                game = bjcarddraw(game, False)
+                game = bjcarddraw(game, True)
+                game = bjcarddraw(game, False)
                 game = blackjackcalculate(game, True)
                 game = blackjackcalculate(game, False)
                 embed = discord.Embed(title="블랙잭 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
@@ -533,7 +540,7 @@ async def blackjackonreact(reaction, user, dbpass):
             # 두번째 턴부터!
             if str(reaction.emoji) == "🃏" and game["FIRSTTURN"] is False:
                 await reaction.message.clear_reactions()
-                game = carddraw(game, True)
+                game = bjcarddraw(game, True)
                 game = blackjackcalculate(game, True)
                 embed = discord.Embed(title="블랙잭 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
                                       color=0xf8f5ff)
@@ -553,7 +560,7 @@ async def blackjackonreact(reaction, user, dbpass):
             # 더블 다운!
             if userdata["POINTS"] >= game["BET"] and str(reaction.emoji) == "💵" and game["FIRSTTURN"] is False:
                 await reaction.message.clear_reactions()
-                game = carddraw(game, True)
+                game = bjcarddraw(game, True)
                 game = blackjackcalculate(game, True)
                 mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"] - game["BET"]}})
                 game["BET"] *= 2
@@ -611,7 +618,7 @@ async def blackjackonreact(reaction, user, dbpass):
                 mclient.Laffey.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "CARDS": [], "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
 
 
-def carddraw(game, isuser):
+def bjcarddraw(game, isuser):
     card = game["CARDS"].pop()
     if isuser is True:
         if card == "A":
@@ -664,7 +671,7 @@ def blackjackcalculate(game, isuser):
 
 async def blackjacklaffey(reaction, game):
     while game["LAFFEY"]["COUNT_A"] < 17:
-        game = carddraw(game, False)
+        game = bjcarddraw(game, False)
         game = blackjackcalculate(game, False)
         embed = discord.Embed(title="블랙잭 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
                               color=0xf8f5ff)
@@ -674,7 +681,7 @@ async def blackjacklaffey(reaction, game):
         await reaction.message.edit(embed=embed)
         await asyncio.sleep(1)
     while (game["LAFFEY"]["COUNT_A"] < game["USER"]["COUNT_A"]) and game["LAFFEY"]["COUNT"] <= 21:
-        game = carddraw(game, False)
+        game = bjcarddraw(game, False)
         game = blackjackcalculate(game, False)
         embed = discord.Embed(title="블랙잭 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
                               color=0xf8f5ff)
@@ -804,7 +811,7 @@ async def laffeyduelonreact(reaction, user, dbpass):
                         comment1 = "지휘관의 승리!"
                         comment2 = "일기토 승리!"
                         win = int(game["BET"] * 2.2)
-                    elif game["LAFFEYWIN"] == game["USERWIN"]:
+                    else:
                         comment1 = "지휘관과 라피의 무승부!"
                         comment2 = "일기토 무승부!"
                         win = game["BET"] * 1
@@ -908,23 +915,217 @@ def laffeyduelcheck(game, emoji):
     return game
 
 
-def test(channel, args, authinfo, dbpass):
+async def drawpoker(channel, args, authinfo, dbpass):
     if len(args) == 3:
-        embed = discord.Embed(title="일기토", description="지휘관, 도박은 나빠...그래도 지휘관이 원한다면...",
+        embed = discord.Embed(title="파이브 카드 드로우", description="지휘관, 도박은 나빠...그래도 지휘관이 원한다면...",
                               color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
-        embed.add_field(name="```도움말```", value="일기토는 전략게임의 일종입니다. 적어도 300포인트의 베팅금이 필요합니다.\n확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
-        embed.add_field(name="```사용법 : !라피 도박 일기토 (베팅금)```",
-                        value="라피와의 대결을 벌입니다. 더 많은 턴에서 이길 경우 승리합니다.\n턴은 총 5턴으로 이루어집니다." +
-                              "\n각 턴마다 공격/방어/도발/필살(1회)을 사용할 수 있습니다.\n 각 행동의 상성은 다음과 같습니다." +
-                              "\n방어 > 공격 > 도발 > 방어\n 필살은 필살로만 상대할 수 있습니다.", inline=False)
-        embed.add_field(name="```배당금```", value="승리 : x2.2 / 무승부 : x1 / 패배 : x0", inline=False)
-        return channel.send(embed=embed)
-    if args[3].isdigit() and len(args) == 4 and int(args[3]) > 0:
-        return laffeyduelstart(channel, int(args[3]), authinfo, dbpass)
+        embed.add_field(name="```도움말```", value="드로우 포커는 카드 게임의 일종입니다. 베팅액은 최저 50, 최대 500 LP까지 가능합니다.\n확률조작 안합니다. 포인트 잃어도 라피는 모릅니다.", inline=False)
+        embed.add_field(name="```사용법 : !라피 도박 드로우포커 (베팅금)```",
+                        value="파이브 카드 드로우를 기반으로 합니다. 카드는 문양이 없습니다.\n먼저 카드를 5장 받습니다." +
+                              "\n바꿀 카드를 0~5장 선택합니다.\n그 뒤 바꾼 카드의 족보에 따라 배당금을 받게 됩니다." +
+                              "\n족보에 대한 정보는 다음 명령어로 알 수 있습니다.\n**!라피 도박 드로우포커 족보**", inline=False)
+        embed.add_field(name="```배당금```",
+                        value="노 페어 : x0 / 원 페어 : x1 / 투 페어 : x1.5\n" +
+                              "트리플 : x 2 / 풀하우스 : x3 / 포카드 : x4\n" +
+                              "스트레이트 : x2.5 / 백스트레이트 : x5", inline=False)
+        embed.add_field(name="```사용법```",
+                        value="1️⃣~5️⃣ : 해당 위치 카드 뒤집기\n" +
+                              "⏹ : 뒤집은 카드 바꾸기\n", inline=False)
+        await channel.send(embed=embed)
+    elif len(args) == 4 and args[3] == "족보":
+        await channel.send("족보!")
+    elif len(args) == 4 and args[3].isdigit() and int(args[3]) > 0:
+        await drawpokerstart(channel, int(args[3]), authinfo, dbpass)
     else:
-        return channel.send("지휘관...베팅할 양을 제대로 입력해줘...")
+        await channel.send("지휘관...사용법이 틀린 것 같아...")
+
+
+# 문양 없는 카드를 원하는 수만큼 리턴해주는 공통 코드로 제작해둔다.
+def listcard(count):
+    cardlist = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
+                "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
+                "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",
+                "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
+    return random.sample(cardlist, count)
+
+
+def drawpokerstart(channel, bet, authinfo, dbpass):
+    if authinfo["POINTS"] < bet:
+        return channel.send("지휘관...포인트가 모자라...")
+    if not 50 <= bet <= 500:
+        return channel.send("지휘관...50 ~ 500 포인트만 베팅이 가능해...")
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    db = mclient.Laffey
+    if db.Gamble.find_one({"GAME": "LAFFEYDUEL"})["PLAYING"] is True:
+        return channel.send("지휘관...이미 누군가 파이브 드로우 포커를 진행중이야...")
+    authinfo["POINTS"] -= bet
+    cards = listcard(10)
+    usercards = {"C1": cards.pop(), "C2": cards.pop(), "C3": cards.pop(), "C4": cards.pop(), "C5": cards.pop()}
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": {"PLAYING": True, "BET": bet, "WIN": 0, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "STATUS": "NONE", "CARDS": cards, "USERCARDS": usercards, "CHANGE": {"C1": False, "C2": False, "C3": False, "C4": False, "C5": False}}})
+    embed = discord.Embed(title="파이브 카드 드로우 시작!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (authinfo["NAME"], bet),
+                          color=0xf8f5ff)
+    embed.add_field(name="```상태```", value="진행 전", inline=False)
+    embed.add_field(name="\u200b", value="\u200b\n\u200b", inline=False)
+    return channel.send(embed=embed)
+
+
+async def drawpokerfirstreact(message, client):
+    if str(message.author.id) == str(client.user.id):
+        if len(message.embeds) >= 1:
+            if message.embeds[0].title == "파이브 카드 드로우 시작!":
+                await message.add_reaction("▶")
+
+
+async def drawpokeronreact(reaction, user, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    game = mclient.Laffey.Gamble.find_one({"GAME": "FIVEDRAWPOKER"})
+    if reaction.message.embeds[0].title == "파이브 카드 드로우 시작!":
+        if user.id == game["USERID"] and game["PLAYING"] is True:
+            if str(reaction.emoji) == "▶":
+                await reaction.message.clear_reactions()
+                game = drawpokercalc(game)
+                embed = discord.Embed(title="파이브 카드 드로우 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
+                                      color=0xf8f5ff)
+                embed.add_field(name="```상태```", value="%s" % game["STATUS"], inline=False)
+                embed.add_field(name="\u200b", value="%s %s %s %s %s\n\u200b" % (game["USERCARDS"]["C1"], game["USERCARDS"]["C2"], game["USERCARDS"]["C3"], game["USERCARDS"]["C4"], game["USERCARDS"]["C5"]), inline=False)
+                await reaction.message.edit(embed=embed)
+                mclient.Laffey.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": game})
+                await reaction.message.add_reaction("1️⃣")
+                await reaction.message.add_reaction("2️⃣")
+                await reaction.message.add_reaction("3️⃣")
+                await reaction.message.add_reaction("4️⃣")
+                await reaction.message.add_reaction("5️⃣")
+                await reaction.message.add_reaction("⏹")
+    elif reaction.message.embeds[0].title == "파이브 카드 드로우 진행중!":
+        if user.id == game["USERID"] and game["PLAYING"] is True:
+            if str(reaction.emoji) in ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣"]:
+                await reaction.message.remove_reaction(str(reaction.emoji), member=user)
+                game["CHANGE"] = drawpokerflip(game["CHANGE"], str(reaction.emoji))
+                embed = discord.Embed(title="파이브 카드 드로우 진행중!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (game["USERNICK"], game["BET"]),
+                                      color=0xf8f5ff)
+                embed.add_field(name="```상태```", value="%s" % game["STATUS"], inline=False)
+                embed.add_field(name="\u200b", value="%s\n\u200b" % drawpokerdisplay(game), inline=False)
+                await reaction.message.edit(embed=embed)
+                mclient.Laffey.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": game})
+            elif str(reaction.emoji) == "⏹":
+                await reaction.message.clear_reactions()
+                game = drawpokerchange(game)
+                game = drawpokercalc(game)
+                if game["STATUS"] == "원 페어":
+                    game["WIN"] = int(game["BET"] * 1.0)
+                elif game["STATUS"] == "투 페어":
+                    game["WIN"] = int(game["BET"] * 1.5)
+                elif game["STATUS"] == "트리플":
+                    game["WIN"] = int(game["BET"] * 2.0)
+                elif game["STATUS"] == "스트레이트":
+                    game["WIN"] = int(game["BET"] * 2.5)
+                elif game["STATUS"] == "풀하우스":
+                    game["WIN"] = int(game["BET"] * 3.0)
+                elif game["STATUS"] == "포카드":
+                    game["WIN"] = int(game["BET"] * 4.0)
+                elif game["STATUS"] == "백스트레이트":
+                    game["WIN"] = int(game["BET"] * 5.0)
+                embed = discord.Embed(title="파이브 카드 드로우 종료!", description="[%s] 지휘관이 진행하였음! 베당금 : %d LP" % (game["USERNICK"], game["WIN"]),
+                                      color=0xf8f5ff)
+                embed.add_field(name="```상태```", value="%s" % game["STATUS"], inline=False)
+                embed.add_field(name="\u200b", value="%s %s %s %s %s\n\u200b" % (game["USERCARDS"]["C1"], game["USERCARDS"]["C2"], game["USERCARDS"]["C3"], game["USERCARDS"]["C4"], game["USERCARDS"]["C5"]), inline=False)
+                await reaction.message.edit(embed=embed)
+                userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
+                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["WIN"]}})
+                mclient.Laffey.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": {"PLAYING": False}})
+
+
+def drawpokercalc(game):
+    # Card Replace & Sort
+    acard = [game["USERCARDS"]["C1"],
+             game["USERCARDS"]["C2"],
+             game["USERCARDS"]["C3"],
+             game["USERCARDS"]["C4"],
+             game["USERCARDS"]["C5"]]
+    ncard = []
+    for alphabet in acard:
+        number = alphabet.replace("A", "1")
+        number = number.replace("J", "11")
+        number = number.replace("Q", "12")
+        number = number.replace("K", "13")
+        ncard.append(int(number))
+    ncard.sort()
+    # Check Rank
+    pairs = 0
+    for i in range(0, 4):
+        for j in range(i+1, 5):
+            if ncard[i] == ncard[j]:
+                pairs += 1
+    if pairs == 1:
+        game["STATUS"] = "원 페어"
+    elif pairs == 2:
+        game["STATUS"] = "투 페어"
+    elif pairs == 3:
+        game["STATUS"] = "트리플"
+    elif pairs == 4:
+        game["STATUS"] = "풀하우스"
+    elif pairs == 6:
+        game["STATUS"] = "포카드"
+    else:
+        # 기본 , A10JQK, A2JQK, A23QK, A234K
+        if (ncard[4]-ncard[0] == 4) or (ncard[0] == 1 and ncard[1] == 10) or (ncard[1] == 2 and ncard[2] == 11) or (ncard[2] == 3 and ncard[3] == 12) or (ncard[2] == 3 and ncard[3] == 4 and ncard[4] == 13):
+            if ncard[0] == 1 and ncard[4] == 5:
+                game["STATUS"] = "백스트레이트"
+            else:
+                game["STATUS"] = "스트레이트"
+        else:
+            game["STATUS"] = "노 페어"
+    return game
+
+
+def drawpokerflip(isflip, emoji):
+    if emoji == "1️⃣":
+        if isflip["C1"] is False:
+            isflip["C1"] = True
+        else:
+            isflip["C1"] = False
+    elif emoji == "2️⃣":
+        if isflip["C2"] is False:
+            isflip["C2"] = True
+        else:
+            isflip["C2"] = False
+    elif emoji == "3️⃣":
+        if isflip["C3"] is False:
+            isflip["C3"] = True
+        else:
+            isflip["C3"] = False
+    elif emoji == "4️⃣":
+        if isflip["C4"] is False:
+            isflip["C4"] = True
+        else:
+            isflip["C4"] = False
+    elif emoji == "5️⃣":
+        if isflip["C5"] is False:
+            isflip["C5"] = True
+        else:
+            isflip["C5"] = False
+    return isflip
+
+
+def drawpokerdisplay(game):
+    string = []
+    for i in range(1, 6):
+        if game["CHANGE"]["C"+str(i)] is True:
+            string.append("⬜")
+        else:
+            string.append(game["USERCARDS"]["C"+str(i)])
+    string = " ".join(string)
+    return string
+
+
+def drawpokerchange(game):
+    for i in range(1,6):
+        if game["CHANGE"]["C"+str(i)] is True:
+            game["USERCARDS"]["C"+str(i)] = game["CARDS"].pop()
+    return game
 
 
 
