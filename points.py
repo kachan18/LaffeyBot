@@ -13,7 +13,7 @@ def botpoint(channel, args, authinfo, dbpass):
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
-            embed.add_field(name="```cs\n# %s 지휘관의 남은 빚 #```" % authinfo["NAME"], value="```cs\n %d LP```" % authinfo["POINTS"], inline=False)
+            embed.add_field(name="```%s 지휘관의 남은 빚```" % authinfo["NAME"], value="```cs\n %d LP```" % authinfo["DEBT"], inline=False)
         return channel.send(embed=embed)
     elif args[2] == "확인":
         return pointcheck(channel, args, dbpass)
