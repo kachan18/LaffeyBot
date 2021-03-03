@@ -11,11 +11,15 @@ def botpoint(channel, args, authinfo, dbpass):
                               description="!라피 포인트 보내기 (대상) (수량) : 포인트를 보낼 수 있습니다.\n!라피 포인트 확인 (대상) : 대상의 포인트 확인이 가능합니다." +
                                           "\n!라피 포인트 빈민구제 : 포인트가 '없으면' 100 LP를 얻습니다. 있으면 100LP를 기부합니다.",
                               color=0xf8f5ff)
-        embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="%d LP" % authinfo["POINTS"], inline=False)
+        embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
+        if authinfo["DEBT"] > 0:
+            embed.add_field(name="```cs\n# %s 지휘관의 남은 빚 #```" % authinfo["NAME"], value="```cs\n %d LP```" % authinfo["POINTS"], inline=False)
         return channel.send(embed=embed)
     elif args[2] == "확인":
         return pointcheck(channel, args, dbpass)
     elif args[2] == "보내기":
+        if authinfo["DEBT"] > 0:
+            return channel.send("지휘관, 빚이 있으면 다른 지휘관한테 포인트를 보낼 수 없어...")
         return pointsend(channel, args, authinfo, dbpass)
     elif args[2] == "빈민구제":
         return pointsavior(channel, authinfo, dbpass)
