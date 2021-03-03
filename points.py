@@ -13,7 +13,7 @@ def botpoint(channel, args, authinfo, dbpass):
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
-            embed.add_field(name="```%s 지휘관의 남은 빚```" % authinfo["NAME"], value="```cs\n %d LP```" % authinfo["DEBT"], inline=False)
+            embed.add_field(name="```%s 지휘관의 남은 빚```" % authinfo["NAME"], value="```cs\n%d LP```" % authinfo["DEBT"], inline=False)
         return channel.send(embed=embed)
     elif args[2] == "확인":
         return pointcheck(channel, args, dbpass)
@@ -191,7 +191,7 @@ async def pointsaving(message, args, authinfo, dbpass):
             embed.set_thumbnail(
                 url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
             embed.add_field(name="```도움말```",
-                            value="!라피 청산 (수량) : 입력한 수량만큼 빚을 청산한다냐.", inline=False)
+                            value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산한다냐.", inline=False)
             embed.add_field(name="```주의사항```",
                             value="```cs\n# 빚을 갚아야 은행 이용이 가능하다냥! -아카시-```", inline=False)
             embed.add_field(name="```[ %s ] 지휘관의 현재 빚```" % savedata["NAME"],
@@ -277,7 +277,7 @@ async def debtpayoff(message, args, saveinfo, dbpass):
     if len(args) != 4 or not args[3].isdigit():
         await message.channel.send("지휘관, 사용법이 틀렸다냐")
     elif int(args[3]) <= 0:
-        await message.channel.send("지금 장난하는거냥? 0 미만으로 갚는게 가능할거라고 생각하는거냥!")
+        await message.channel.send("지금 장난하는거냥? 0 LP 갚는게 갚는거냥!")
     elif int(args[3]) > saveinfo["POINTS"]:
         await message.channel.send("포인트가 모자라다냐.")
     elif int(args[3]) > saveinfo["DEBT"]:
