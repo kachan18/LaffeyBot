@@ -287,6 +287,9 @@ async def debtpayoff(message, args, saveinfo, dbpass):
         saveinfo["DEBT"] -= int(args[3])
         embed = discord.Embed(title="아카시론", description="매번 고맙다냥~",
                               color=0xf8f5ff)
+        if saveinfo["DEBT"] <= 0:
+            embed = discord.Embed(title="아카시론", description="빚을 전부 다 갚았다냐. 수고했다냐.",
+                                  color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```도움말```",
