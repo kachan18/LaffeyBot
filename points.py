@@ -9,7 +9,7 @@ def botpoint(channel, args, authinfo, dbpass):
     if len(args) == 2:
         embed = discord.Embed(title="(빤히)...지휘관한테 얼마나 있는지, 생각하고 있었어.",
                               description="!라피 포인트 보내기 (대상) (수량) : 포인트를 보낼 수 있습니다.\n!라피 포인트 확인 (대상) : 대상의 포인트 확인이 가능합니다." +
-                                          "\n!라피 포인트 빈민구제 : 포인트가 '없으면' 100 LP를 얻습니다. 있으면 100LP를 기부합니다.",
+                                          "\n!라피 포인트 빈민구제 : 포인트가 '없으면' 100 LP를 빌립니다. 100 LP 이상 있으면 100 LP를 기부합니다.",
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
@@ -73,9 +73,9 @@ def pointsavior(channel, authinfo, dbpass):
         tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
         mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"COUNT": tempvar["COUNT"]+1, "SAVING": tempvar["SAVING"]-100}})
         if int(tempvar["SAVING"]) <= 0:
-            return channel.send("누군가 라피의 용돈을 전부 받아가버렸어...이제 남은 용돈이 없어...")
+            return channel.send("누군가 라피의 용돈을 전부 빌려가버렸어...이제 남은 용돈이 없어...")
         embed = discord.Embed(title="지휘관...... 혹시, 빈털털이...?",
-                              description="힘내 지휘관...작지만 이거라도 줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
+                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
                               color=0xf8f5ff)
         return channel.send(embed=embed)
     elif info["POINTS"] >= 100:
