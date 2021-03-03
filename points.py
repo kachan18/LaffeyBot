@@ -71,7 +71,7 @@ def pointsavior(channel, authinfo, dbpass):
         if int(tempvar["SAVING"]) <= 0:
             return channel.send("누군가 라피의 용돈을 전부 받아가버렸어...이제 남은 용돈이 없어...")
         embed = discord.Embed(title="지휘관...... 혹시, 빈털털이...?",
-                              description="힘내 지휘관...작지만 이거라도 줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"])),
+                              description="힘내 지휘관...작지만 이거라도 줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
                               color=0xf8f5ff)
         return channel.send(embed=embed)
     elif info["POINTS"] >= 100:
