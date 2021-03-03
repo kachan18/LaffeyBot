@@ -1,10 +1,12 @@
 import discord
 import asyncio
+import pymongo
+import os
 import commands
 import gamblefunction
 import gachafunction
-import pymongo
-import os
+import points
+
 
 dbpass = os.environ["DB_PASS"]
 client = discord.Client()
@@ -39,6 +41,7 @@ async def on_reaction_add(reaction, user):
         await gamblefunction.updownonreact(reaction, user, dbpass)
         await gamblefunction.blackjackonreact(reaction, user, dbpass)
         await gamblefunction.laffeyduelonreact(reaction, user, dbpass)
+        await gamblefunction.drawpokeronreact(reaction, user, dbpass)
         await asyncio.sleep(0.5)
         db.update_one({"ID": user.id}, {"$set": {"ISONREACT": False}})
 
@@ -61,11 +64,12 @@ async def on_message(message):
         await gamblefunction.updownfirstreact(message, client)
         await gamblefunction.blackjackfirstreact(message, client)
         await gamblefunction.laffeyduelfirstreact(message, client)
+        await gamblefunction.drawpokerfirstreact(message, client)
         return None
 
     # db에 없는 id일 경우.
     if authinfo is None:
-        db.insert_one({"ID": uid, "NAME": message.author.name, "POINTS": 1000, "DCTime": 0, "DCStimul": 0, "DCTotal": 0, "ISONREACT": False})
+        db.insert_one({"ID": uid, "NAME": message.author.name, "POINTS": 1000, "DCTime": 0, "DCStimul": 0, "DCTotal": 0, "BANKDATE": 0, "SAVING": 0, "DEBT": 0, "ISONREACT": False})
     db.update_one({"ID": uid}, {"$set": {"NAME": message.author.name}})
 
     # 만약 특정 채널에서만 작동 가능 위해서는 아래 문구를 조건 뒤에 추가.
@@ -81,15 +85,17 @@ async def on_message(message):
             elif cmdline[1] == "정보":
                 await commands.botinfo(channel)
             elif cmdline[1] == "포인트":
-                await commands.botpoint(channel, cmdline, authinfo, dbpass)
+                await points.botpoint(channel, cmdline, authinfo, dbpass)
             elif cmdline[1] == "출석체크":
                 await commands.attendcheck(channel, authinfo, dbpass)
             elif cmdline[1] == "도박":
                 await commands.gamble(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "가챠":
                 await commands.gacha(message, cmdline, authinfo, dbpass)
-            elif cmdline[1] == "가위바위보":
-                await commands.rpswithlaffey(channel, authinfo)
+            elif cmdline[1] == "포인트벌이":
+                await points.pointearning(message, cmdline, authinfo, dbpass)
+            elif cmdline[1] == "저금":
+                await points.pointsaving(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "디버그":
                 await channel.send("나중에 도박 기능이라던가 에러나면 쓸수 있도록.")
             else:
