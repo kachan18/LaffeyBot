@@ -209,9 +209,6 @@ async def pointsaving(message, args, authinfo, dbpass):
             return
         await withdrawl(message, args, savedata, dbpass)
     elif args[2] == "대출":
-        if savedata["SAVING"] > 0:
-            await channel.send("지휘관...저금한 포인트가 남아있어...")
-            return
         await loan(message, args, savedata, dbpass)
     elif args[2] == "청산":
         if savedata["DEBT"] <= 0:
@@ -310,7 +307,7 @@ async def loan(message, args, saveinfo, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
         embed.add_field(name="```도움말```",
-                        value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.\n대출 시 대출액의 1.5배가 빚에 추가됩니다.\n대출 한도는 5000 LP입니다.", inline=False)
+                        value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출 시 '대출액'의 '0.5배'가 '이자'로 추가됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
                         value="```%d LP```" % saveinfo["POINTS"], inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
