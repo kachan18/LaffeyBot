@@ -8,6 +8,7 @@ import gachafunction
 import points
 
 
+
 dbpass = os.environ["DB_PASS"]
 client = discord.Client()
 
@@ -69,14 +70,17 @@ async def on_message(message):
 
     # db에 없는 id일 경우.
     if authinfo is None:
-        db.insert_one({"ID": uid, "NAME": message.author.name, "POINTS": 1000, "DCTime": 0, "DCStimul": 0, "DCTotal": 0, "BANKDATE": 0, "SAVING": 0, "DEBT": 0, "ISONREACT": False})
+        db.insert_one({"ID": uid, "NAME": message.author.name, "POINTS": 1000, "DCTime": 0, "DCStimul": 0, "DCTotal": 0, "BANKDATE": 0, "SAVING": 0, "DEBT": 0, "ISONACT": False, "ISONREACT": False})
     db.update_one({"ID": uid}, {"$set": {"NAME": message.author.name}})
 
     # 만약 특정 채널에서만 작동 가능 위해서는 아래 문구를 조건 뒤에 추가.
     # and str(channel) == "봇채널"
     if message.content.startswith("!라피"):
+        db.update_one({"ID": uid}, {"$set": {"NAME": message.author.name}})
+        if authinfo["ISONACT"] is True:
+            await channel.send("지휘관, 이미 무언가를 하고 있어...")
+            return None
         cmdline = message.content.split(' ')
-
         if len(cmdline) == 1:
             await channel.send(commands.noargs())
         elif len(cmdline) >= 2:

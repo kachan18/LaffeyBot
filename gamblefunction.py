@@ -72,7 +72,7 @@ def dicegame(channel, bet, authinfo, dbpass):
     if db.Gamble.find_one({"GAME": "DICEBATTLE"})["PLAYING"] is True:
         return channel.send("지휘관...이미 누군가 다이스배틀을 진행중이야...")
     authinfo["POINTS"] -= bet
-    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"], "ISONACT": True}})
     db.Gamble.update_one({"GAME": "DICEBATTLE"}, {"$set": {"PLAYING": True, "BET": bet, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "LAFFEYHP": 10, "USERHP": 10, "LAFFEYSHIELD": 0, "USERSHIELD": 0, "LAFFEYDICE": 10, "USERDICE": 10}})
     embed = discord.Embed(title="다이스배틀 시작!", description="[%s] 지휘관이 진행중! 배팅액 : %d LP" % (authinfo["NAME"], bet),
                           color=0xf8f5ff)
@@ -174,7 +174,7 @@ async def dicegameresult(reaction, game, dbpass):
         iswin = "비겼음"
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"]}})
+    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"], "ISONACT": False}})
     embed = discord.Embed(title="다이스배틀 종료!", description="[%s] 지휘관 %s! 배당금 : %d LP" % (game["USERNICK"], iswin, game["BET"]),
                           color=0xf8f5ff)
     embed.add_field(name="```공격자```", value="종료됨", inline=False)
@@ -295,7 +295,7 @@ def updownstart(channel, bet, authinfo, dbpass):
         cards = "K"
     else:
         cards = str(updowncards[0])
-    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"], "ISONACT": True}})
     db.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"PLAYING": True, "BET": bet, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "STACK": 0, "WIN": bet, "C1": updowncards[0], "C2": updowncards[1], "C3": updowncards[2], "C4": updowncards[3], "C5": updowncards[4]}})
     embed = discord.Embed(title="UPDOWN 시작!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (authinfo["NAME"], bet),
                           color=0xf8f5ff)
@@ -367,6 +367,7 @@ async def updownonreact(reaction, user, dbpass):
                                           color=0xf8f5ff)
                     embed.add_field(name="```결과 : %s / 베팅 : %s```" % (status, str(reaction.emoji)), value="베팅금 : %d LP / 배당금 : %d LP" % (game["BET"], game["WIN"]), inline=False)
                     embed.add_field(name="```카드 공개!```", value="\u200b\n%s %s %s %s %s\n\u200b" % (cards[0], cards[1], cards[2], cards[3], cards[4]), inline=False)
+                    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"ISONACT": False}})
                     mclient.Laffey.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "NOONE", "STACK": 0, "WIN": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0, "C5": 0}})
                     await reaction.message.edit(embed=embed)
                 # 게임 끝!
@@ -378,7 +379,7 @@ async def updownonreact(reaction, user, dbpass):
                     embed.add_field(name="```카드 공개!```", value="\u200b\n%s %s %s %s %s\n\u200b" % (cards[0], cards[1], cards[2], cards[3], cards[4]), inline=False)
                     await reaction.message.edit(embed=embed)
                     user = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-                    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": user["POINTS"] + game["WIN"]}})
+                    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": user["POINTS"] + game["WIN"], "ISONACT": False}})
                     mclient.Laffey.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "NOONE", "STACK": 0, "WIN": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0, "C5": 0}})
                 else:
                     mclient.Laffey.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"STACK": game["STACK"], "WIN": game["WIN"]}})
@@ -405,7 +406,7 @@ async def updownonreact(reaction, user, dbpass):
                                       color=0xf8f5ff)
                 embed.add_field(name="```결과 : 중단! / 베팅 : 중단!```", value="베팅금 : %d LP / 배당금 : %d LP" % (game["BET"], game["WIN"]), inline=False)
                 embed.add_field(name="```카드 공개!```", value="\u200b\n%s %s %s %s %s\n\u200b" % (cards[0], cards[1], cards[2], cards[3], cards[4]), inline=False)
-                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": user["POINTS"] + game["WIN"]}})
+                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": user["POINTS"] + game["WIN"], "ISONACT": False}})
                 mclient.Laffey.Gamble.update_one({"GAME": "UPDOWN"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "NOONE", "STACK": 0, "WIN": 0, "C1": 0, "C2": 0, "C3": 0, "C4": 0, "C5": 0}})
                 await reaction.message.edit(embed=embed)
 
@@ -477,7 +478,7 @@ def blackjackstart(channel, bet, authinfo, dbpass):
     authinfo["POINTS"] -= bet
     blackjackcards = ["A", "A", "A", "A", "2", "2", "2", "2", "3", "3", "3", "3", "4", "4", "4", "4", "5", "5", "5", "5", "6", "6", "6", "6", "7", "7", "7", "7", "8", "8", "8", "8", "9", "9", "9", "9", "10", "10", "10", "10", "J", "J", "J", "J", "Q", "Q", "Q", "Q", "K", "K", "K", "K"]
     gamecards = random.sample(blackjackcards, 20)
-    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"], "ISONACT": True}})
     db.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": True, "BET": bet, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "CARDS": gamecards, "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
     embed = discord.Embed(title="블랙잭 시작!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (authinfo["NAME"], bet),
                           color=0xf8f5ff)
@@ -614,7 +615,7 @@ async def blackjackonreact(reaction, user, dbpass):
                 embed.add_field(name="```지휘관```", value="%s" % str(game["USER"]["STATUS"]), inline=False)
                 await reaction.message.edit(embed=embed)
                 userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"] + game["BET"]}})
+                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"] + game["BET"], "ISONACT": False}})
                 mclient.Laffey.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "CARDS": [], "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
 
 
@@ -702,6 +703,7 @@ async def blackjacklose(reaction, game, dbpass):
     embed.add_field(name="%s" % " ".join(game["LAFFEY"]["CARDS"]), value="\u200b\n**%s**" % " ".join(game["USER"]["CARDS"]), inline=False)
     embed.add_field(name="```지휘관```", value="%s" % str(game["USER"]["STATUS"]), inline=False)
     await reaction.message.edit(embed=embed)
+    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"ISONACT": False}})
     mclient.Laffey.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "CARDS": [], "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
 
 
@@ -714,7 +716,7 @@ async def blackjackdraw(reaction, game, dbpass):
     embed.add_field(name="```지휘관```", value="%s" % str(game["USER"]["STATUS"]), inline=False)
     await reaction.message.edit(embed=embed)
     userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"]}})
+    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"], "ISONACT": False}})
     mclient.Laffey.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "CARDS": [], "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
 
 
@@ -731,7 +733,7 @@ async def blackjackwin(reaction, game, dbpass):
     embed.add_field(name="```지휘관```", value="%s" % str(game["USER"]["STATUS"]), inline=False)
     await reaction.message.edit(embed=embed)
     userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"]}})
+    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["BET"], "ISONACT": False}})
     mclient.Laffey.Gamble.update_one({"GAME": "BLACKJACK"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "CARDS": [], "FIRSTTURN": True, "LAFFEY": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}, "USER": {"ACE": 0, "COUNT": 0, "COUNT_A": 0, "CARDS": [], "STATUS": "0"}}})
 
 
@@ -765,7 +767,7 @@ def laffeyduelstart(channel, bet, authinfo, dbpass):
     dolist = ["🗡", "🛡", "👎"]
     laffeyturn = [random.choice(dolist) for i in range(0, 5)]
     laffeyturn[random.randint(0, 4)] = "🔥"
-    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"], "ISONACT": True}})
     db.Gamble.update_one({"GAME": "LAFFEYDUEL"}, {"$set": {"PLAYING": True, "BET": bet, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "LAFFEYTURN": laffeyturn, "TURN": 0, "LSTATUS": "NUL", "USTATUS": "NUL", "LAFFEYWIN": 0, "USERWIN": 0, "USEULT": False}})
     embed = discord.Embed(title="일기토 시작!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (authinfo["NAME"], bet),
                           color=0xf8f5ff)
@@ -816,7 +818,7 @@ async def laffeyduelonreact(reaction, user, dbpass):
                         comment2 = "일기토 무승부!"
                         win = game["BET"] * 1
                     userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-                    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"] + win}})
+                    mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"] + win, "ISONACT": False}})
                     mclient.Laffey.Gamble.update_one({"GAME": "LAFFEYDUEL"}, {"$set": {"PLAYING": False, "BET": 0, "USERID": 0, "USERNICK": "Noone", "LAFFEYTURN": [], "TURN": 0, "LSTATUS": "NUL", "USTATUS": "NUL", "LAFFEYWIN": 0, "USERWIN": 0, "USEULT": False}})
                     await asyncio.sleep(1)
                     embed = discord.Embed(title="일기토 종료!", description="[%s] %s 배당금 : %d LP" % (game["USERNICK"], comment1, win),
@@ -963,7 +965,7 @@ def drawpokerstart(channel, bet, authinfo, dbpass):
     authinfo["POINTS"] -= bet
     cards = listcard(10)
     usercards = {"C1": cards.pop(), "C2": cards.pop(), "C3": cards.pop(), "C4": cards.pop(), "C5": cards.pop()}
-    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"]}})
+    db.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": authinfo["POINTS"], "ISONACT": True}})
     db.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": {"PLAYING": True, "BET": bet, "WIN": 0, "USERID": authinfo["ID"], "USERNICK": authinfo["NAME"], "STATUS": "NONE", "CARDS": cards, "USERCARDS": usercards, "CHANGE": {"C1": False, "C2": False, "C3": False, "C4": False, "C5": False}}})
     embed = discord.Embed(title="파이브 카드 드로우 시작!", description="[%s] 지휘관이 진행중! 베팅액 : %d LP" % (authinfo["NAME"], bet),
                           color=0xf8f5ff)
@@ -1034,7 +1036,7 @@ async def drawpokeronreact(reaction, user, dbpass):
                 embed.add_field(name="\u200b", value="%s %s %s %s %s\n\u200b" % (game["USERCARDS"]["C1"], game["USERCARDS"]["C2"], game["USERCARDS"]["C3"], game["USERCARDS"]["C4"], game["USERCARDS"]["C5"]), inline=False)
                 await reaction.message.edit(embed=embed)
                 userdata = mclient.Laffey.Data.find_one({"ID": game["USERID"]})
-                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["WIN"]}})
+                mclient.Laffey.Data.update_one({"ID": game["USERID"]}, {"$set": {"POINTS": userdata["POINTS"]+game["WIN"], "ISONACT": False}})
                 mclient.Laffey.Gamble.update_one({"GAME": "FIVEDRAWPOKER"}, {"$set": {"PLAYING": False}})
 
 

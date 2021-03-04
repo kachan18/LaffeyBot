@@ -13,7 +13,7 @@ async def letsgacha(message, args, authinfo, dbpass):
     if machineinfo["PLAYING"] is True:
         await channel.send("지휘관...이미 누군가 가챠를 진행중이야...")
     else:
-        gachasystem.update_one({"SYSTEM": "GACHA"}, {"$set": {"PLAYING": True, "USERID": authinfo["ID"], "USERNAME": authinfo["NAME"]}})
+        gachasystem.update_one({"SYSTEM": "GACHA"}, {"$set": {"PLAYING": True, "USERID": authinfo["ID"], "USERNAME": authinfo["NAME"], "CURRENTMACHINE": 0}})
         embed = discord.Embed(title="가챠 대기중!", description="가챠는 나쁜 문명!",
                               color=0xf8f5ff)
         embed.set_thumbnail(
@@ -54,7 +54,7 @@ async def letsgachaonreact(reaction, user, dbpass):
                 await letsgachagacha(reaction, machineinfo, dbpass)
             elif str(reaction.emoji) == "❌":
                 await reaction.message.clear_reactions()
-                gachasystem.update_one({"SYSTEM": "GACHA"}, {"$set": {"PLAYING": False, "USERID": 0, "USERNAME": "LAFFEY","CURRENTMACHINE": 0}})
+                gachasystem.update_one({"SYSTEM": "GACHA"}, {"$set": {"PLAYING": False, "USERID": 0, "USERNAME": "LAFFEY", "CURRENTMACHINE": 0}})
                 embed = discord.Embed(title="가챠 종료!", description="가챠는 나쁜 문명!",
                                       color=0xf8f5ff)
                 embed.add_field(name="```지휘관, 원하는 건 뽑았어...?```", value="다음에 또 와...", inline=False)
