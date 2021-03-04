@@ -658,7 +658,7 @@ def blackjackcalculate(game, isuser):
     else:
         game["LAFFEY"]["COUNT_A"] = game["LAFFEY"]["COUNT"]
         for i in range(0, game["LAFFEY"]["ACE"]):
-            if game["LAFFEY"]["COUNT"]+10 <= 21:
+            if game["LAFFEY"]["COUNT_A"]+10 <= 21:
                 game["LAFFEY"]["COUNT_A"] += 10
             else:
                 break
@@ -1030,7 +1030,7 @@ async def drawpokeronreact(reaction, user, dbpass):
                     game["WIN"] = int(game["BET"] * 4.0)
                 elif game["STATUS"] == "백스트레이트":
                     game["WIN"] = int(game["BET"] * 5.0)
-                embed = discord.Embed(title="파이브 카드 드로우 종료!", description="[%s] 지휘관이 진행하였음! 베당금 : %d LP" % (game["USERNICK"], game["WIN"]),
+                embed = discord.Embed(title="파이브 카드 드로우 종료!", description="[%s] 지휘관이 진행하였음! 배당금 : %d LP" % (game["USERNICK"], game["WIN"]),
                                       color=0xf8f5ff)
                 embed.add_field(name="```상태```", value="%s" % game["STATUS"], inline=False)
                 embed.add_field(name="\u200b", value="%s %s %s %s %s\n\u200b" % (game["USERCARDS"]["C1"], game["USERCARDS"]["C2"], game["USERCARDS"]["C3"], game["USERCARDS"]["C4"], game["USERCARDS"]["C5"]), inline=False)

@@ -1,4 +1,5 @@
 import discord
+from discord.ext import tasks
 import asyncio
 import pymongo
 import os
@@ -6,7 +7,6 @@ import commands
 import gamblefunction
 import gachafunction
 import points
-
 
 
 dbpass = os.environ["DB_PASS"]
@@ -43,7 +43,6 @@ async def on_reaction_add(reaction, user):
         await gamblefunction.blackjackonreact(reaction, user, dbpass)
         await gamblefunction.laffeyduelonreact(reaction, user, dbpass)
         await gamblefunction.drawpokeronreact(reaction, user, dbpass)
-        await asyncio.sleep(0.5)
         db.update_one({"ID": user.id}, {"$set": {"ISONREACT": False}})
 
 
@@ -100,8 +99,10 @@ async def on_message(message):
                 await points.pointearning(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "저금":
                 await points.pointsaving(message, cmdline, authinfo, dbpass)
+            elif cmdline[1] == "투자":
+                await points.pointinvest(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "디버그":
-                await commands.debug(message, cmdline, authinfo, dbpass)
+                await commands.debug(client, message, cmdline, authinfo, dbpass)
             else:
                 await channel.send("지휘관, 무슨 말인지 모르겠어...졸려...같이 코~할래?")
     if message.content.startswith("!벤슨"):
@@ -115,6 +116,15 @@ async def on_message(message):
     if message.content.startswith("!아카시"):
         await message.channel.send("지휘관도 아카시의 수리가 필요한 거냥?")
 
+
+@tasks.loop(minutes=10.0)
+async def invest_renewing():
+    await client.wait_until_ready()
+    cha = discord.Client.get_channel(client, 817014562561851442)
+    await points.investrenew(cha, dbpass)
+
+
 # 수동 토큰 설정시
 access_token = os.environ["BOT_TOKEN"]
+invest_renewing.start()
 client.run(access_token)

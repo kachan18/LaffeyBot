@@ -9,7 +9,7 @@ def botpoint(channel, args, authinfo, dbpass):
     if len(args) == 2:
         embed = discord.Embed(title="(빤히)...지휘관한테 얼마나 있는지, 생각하고 있었어.",
                               description="!라피 포인트 보내기 (대상) (수량) : 포인트를 보낼 수 있습니다.\n!라피 포인트 확인 (대상) : 대상의 포인트 확인이 가능합니다." +
-                                          "\n!라피 포인트 빈민구제 : 포인트가 '없으면' 100 LP를 빌립니다. 100 LP 이상 있으면 100 LP를 기부합니다.",
+                                          "\n!라피 포인트 빌리기 : 포인트가 없으면 100 LP를 빌립니다.(빚에 110 LP가 추가됩니다)",
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
@@ -21,7 +21,7 @@ def botpoint(channel, args, authinfo, dbpass):
         if authinfo["DEBT"] > 0:
             return channel.send("지휘관, 빚이 있으면 다른 지휘관한테 포인트를 보낼 수 없어...")
         return pointsend(channel, args, authinfo, dbpass)
-    elif args[2] == "빈민구제":
+    elif args[2] == "빌리기":
         return pointsavior(channel, authinfo, dbpass)
     else:
         return channel.send("지휘관, 알 수 없는 명령어야...")
@@ -69,24 +69,13 @@ def pointsavior(channel, authinfo, dbpass):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     info = mclient.Laffey.Data.find_one({"ID": authinfo["ID"]})
     if info["POINTS"] <= 0:
-        mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] + 100, "DEBT": info["DEBT"] + 100}})
+        mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] + 100, "DEBT": info["DEBT"] + 110}})
         tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
         mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"COUNT": tempvar["COUNT"]+1, "SAVING": tempvar["SAVING"]-100}})
         if int(tempvar["SAVING"]) <= 0:
             return channel.send("누군가 라피의 용돈을 전부 빌려가버렸어...이제 남은 용돈이 없어...")
         embed = discord.Embed(title="지휘관...... 혹시, 빈털털이...?",
-                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
-                              color=0xf8f5ff)
-        return channel.send(embed=embed)
-    elif info["POINTS"] >= 100:
-        if info["DEBT"] >= 100:
-            mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] - 100, "DEBT": info["DEBT"] - 100}})
-        else:
-            mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] - 100}})
-        tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
-        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"DONATE": tempvar["DONATE"] + 1, "SAVING": tempvar["SAVING"] + 100}})
-        embed = discord.Embed(title="지휘관...?",
-                              description="라피한테 주는거야...? 이거로 빈털털이가 된 지휘관한테라도 줄게...(- 100 LP)\n 현재까지 누군가 기부한 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["DONATE"]+1), int(tempvar["SAVING"] + 100)),
+                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP) (빚 + 110 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
                               color=0xf8f5ff)
         return channel.send(embed=embed)
     else:
@@ -296,7 +285,10 @@ async def loan(message, args, saveinfo, dbpass):
         await message.channel.send("지금 장난하는거냥? 0 LP 를 빌릴수는 없다냐! -아카시-")
     elif (int(args[3]) + saveinfo["DEBT"]) > 5000:
         await message.channel.send("대출 한도 초과다냐. -아카시-")
+    elif not saveinfo["DEBTDATE"] < int(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y%m%d")):
+        await message.channel.send("이미 오늘 빌렸다냐. -아카시-")
     else:
+        saveinfo["DEBTDATE"] = int(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y%m%d"))
         saveinfo["POINTS"] += int(args[3])
         saveinfo["DEBT"] += int(int(args[3]) * 1.5)
         embed = discord.Embed(title="아카시론", description="매번 고맙다냥~",
@@ -343,4 +335,217 @@ async def debtpayoff(message, args, saveinfo, dbpass):
         embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
                         value="```cs\n%d LP```" % saveinfo["DEBT"], inline=False)
         await message.channel.send(embed=embed)
+        Laffey = mclient.Laffey.Data.find_one({"ID": 1004})
+        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"SAVING": Laffey["POINTS"]+int(int(args[3])/10.0)}})
         mclient.Laffey.Data.update_one({"ID": saveinfo["ID"]}, {"$set": saveinfo})
+
+
+async def pointinvest(message, args, authinfo, dbpass):
+    channel = message.channel
+    if len(args) == 2:
+        embed = discord.Embed(title="투자", description="지휘관, 지휘관. 라피, 무서워?",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```명령어```",
+                        value="!라피 투자 [목록|종류] : 투자가 가능한 종목을 열람합니다.\n" +
+                              "!라피 투자 [확인|보유] : 현재 보유 중인 종목을 열람합니다.\n" +
+                              "!라피 투자 [구매|매수] (번호) (수량) : 해당 번호의 종목을 수량 만큼 매수합니다.\n" +
+                              "!라피 투자 [판매|매도] (번호) (수량) : 해당 번호의 종목을 수량 만큼 매도합니다.", inline=False)
+        embed.add_field(name="```도움말```",
+                        value="```cs\n1. 매수/매도가의 경우 매 10 분 정도마다 갱신됩니다." +
+                              "\n2. 떡락하던 떡상하던 라피는 모릅니다." +
+                              "\n3. 거래 수수료는 다행히도 아직 받지 않습니다." +
+                              "\n4. 해당 종목의 가격이 10 LP 보다 떨어지면 상장폐지되어 휴지조각이 됩니다.```", inline=False)
+        await channel.send(embed=embed)
+    elif args[2] in ["목록", "종류"]:
+        await investlist(channel, dbpass)
+    elif args[2] in ["정보"]:
+        await investinfo(channel, args, dbpass)
+    elif args[2] in ["확인", "보유"]:
+        await investcheck(channel, authinfo["ID"], dbpass)
+    elif args[2] in ["구매", "매수"]:
+        await investbuy(channel, args, authinfo, dbpass)
+    elif args[2] in ["판매", "매도"]:
+        await investsell(channel, args, authinfo, dbpass)
+    else:
+        await channel.send("지휘관, 알 수 없는 명령어야...")
+
+
+async def investlist(channel, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+    investdata = mclient.Invest.System.find_one({"SYSTEM": "INVEST"})
+    investpre = mclient.Invest.System.find_one({"SYSTEM": "INVESTPRE"})
+    invlist = []
+    for i in range(0, len(investdata["NAME"])):
+        if investdata["PRICE"][i] <= 0:
+            invlist.append(str(i + 1) + ". " + investdata["NAME"][i] +
+                           " : 상장폐지" +
+                           "\n  변화량 : 휴지조각이 되었음.")
+            continue
+        invlist.append(str(i+1) + ". " + investdata["NAME"][i] +
+                       " : 개당 " + str(investdata["PRICE"][i]) +
+                       " LP\n  변화량 : "+str(investdata["PRICE"][i] - investpre["PRICE"][i])+" LP")
+    invlist = "\n".join(invlist)
+    embed = discord.Embed(title="투자", description="지휘관, 지휘관. 라피, 무서워?",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```현재 매수/매도가```",
+                    value="```cs\n%s```" % invlist, inline=False)
+    await channel.send(embed=embed)
+
+
+async def investinfo(channel, args, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+    investdata = mclient.Invest.System.find_one({"SYSTEM": "INVEST"})
+    investpre = mclient.Invest.System.find_one({"SYSTEM": "INVESTPRE"})
+    invlist = []
+    for i in range(0, len(investdata["NAME"])):
+        if investdata["PRICE"][i] <= 0:
+            invlist.append(str(i + 1) + ". " + investdata["NAME"][i] +
+                           " : 상장폐지" +
+                           "\n  변화량 : 휴지조각이 되었음.")
+            continue
+        invlist.append(str(i+1) + ". " + investdata["NAME"][i] +
+                       " : 개당 " + str(investdata["PRICE"][i]) +
+                       " LP\n  변화량 : "+str(investdata["PRICE"][i] - investpre["PRICE"][i])+" LP")
+    invlist = "\n".join(invlist)
+    embed = discord.Embed(title="투자", description="지휘관, 지휘관. 라피, 무서워?",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```현재 매수/매도가```",
+                    value="```cs\n%s```" % invlist, inline=False)
+    await channel.send(embed=embed)
+
+
+async def investcheck(channel, uid, dbpass):
+    investdata, userdata = investdbload(uid, dbpass)
+    invlist = []
+    for i in range(0, len(investdata["NAME"])):
+        invlist.append(str(i+1)+". "+investdata["NAME"][i]+" : "+str(userdata["HAVE"][i])+" 개\n  최근 구매가 : "+str(userdata["BUYPRICE"][i])+" LP")
+    invlist = "\n".join(invlist)
+    embed = discord.Embed(title="투자", description="지휘관, 지휘관. 라피, 무서워?",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```현재 보유 종목```",
+                    value="```cs\n%s```" % invlist, inline=False)
+    await channel.send(embed=embed)
+
+
+async def investbuy(channel, args, authinfo, dbpass):
+    investdata, userdata = investdbload(authinfo["ID"], dbpass)
+    if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
+        await channel.send("지휘관 사용법이 틀린 것 같아...")
+    elif args[3] in list(range(1, len(investdata["NAME"])+1))+investdata["NAME"]:
+        if not args[3].isdigit():
+            for i in range(0, len(investdata["NAME"])):
+                if args[3] == investdata["NAME"][i]:
+                    args[3] = i + 1
+                    break
+        args[3] = int(args[3]) - 1
+        if investdata["PRICE"][int(args[3])] == 0:
+            await channel.send("해당 투자 대상은 상장폐지가 된 상태야...")
+        if investdata["PRICE"][int(args[3])] * int(args[4]) <= authinfo["POINTS"]:
+            authinfo["POINTS"] -= investdata["PRICE"][int(args[3])] * int(args[4])
+            embed = discord.Embed(title="투자", description="지휘관, 성공적으로 매수를 완료했어...",
+                                  color=0xf8f5ff)
+            embed.set_thumbnail(
+                url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+            embed.add_field(name="```매수 정보```",
+                            value="매수 종목 : %s\n매수량 : %d\n매수가 : %d LP" % (investdata["NAME"][int(args[3])], int(args[4]), investdata["PRICE"][int(args[3])]), inline=False)
+            await channel.send(embed=embed)
+            mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+            mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
+            userdata["HAVE"][int(args[3])] += int(args[4])
+            userdata["BUYPRICE"][int(args[3])] = investdata["PRICE"][int(args[3])]
+            investuserdbsave(userdata, dbpass)
+        else:
+            await channel.send("지휘관, 소지 포인트가 모자란 것 같아...")
+    else:
+        await channel.send("지휘관, 입력한 숫자가 없는 번호거나 그런 이름의 투자처는 없어...")
+
+
+async def investsell(channel, args, authinfo, dbpass):
+    investdata, userdata = investdbload(authinfo["ID"], dbpass)
+    if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
+        await channel.send("지휘관 사용법이 틀린 것 같아...")
+    elif args[3] in list(range(1, len(investdata["NAME"])+1)) + investdata["NAME"]:
+        if not args[3].isdigit():
+            for i in range(0, len(investdata["NAME"])):
+                if args[3] == investdata["NAME"][i]:
+                    args[3] = i + 1
+                    break
+        args[3] = int(args[3]) - 1
+        if int(args[4]) <= userdata["HAVE"][int(args[3])]:
+            authinfo["POINTS"] += investdata["PRICE"][int(args[3])] * int(args[4])
+            embed = discord.Embed(title="투자", description="지휘관, 성공적으로 매도를 완료했어...",
+                                  color=0xf8f5ff)
+            embed.set_thumbnail(
+                url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+            embed.add_field(name="```매도 정보```",
+                            value="매도 종목 : %s\n매도량 : %d\n매도가 : %d LP" % (investdata["NAME"][int(args[3])], int(args[4]), investdata["PRICE"][int(args[3])]), inline=False)
+            await channel.send(embed=embed)
+            mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+            mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
+            userdata["HAVE"][int(args[3])] -= int(args[4])
+            if userdata["HAVE"][int(args[3])] <= 0:
+                userdata["BUYPRICE"][int(args[3])] = "전량 판매"
+            investuserdbsave(userdata, dbpass)
+        else:
+            await channel.send("지휘관, 매도에 필요한 양이 모자란 것 같아...")
+    else:
+        await channel.send("지휘관, 입력한 숫자가 없는 번호거나 그런 이름의 투자처는 없어...")
+
+
+async def investrenew(channel, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+    investdata = mclient.Invest.System.find_one({"SYSTEM": "INVEST"})
+    if investdata["OPERATING"] is True:
+        investpre = investdata
+        del(investpre["_id"])
+        del(investpre["SYSTEM"])
+        mclient.Invest.System.update_one({"SYSTEM": "INVESTPRE"}, {"$set": investpre})
+        for i in range(0, len(investdata["NAME"])):
+            investdata["PRICE"][i] = int(investdata["PRICE"][i] * (1.0 - (investdata["VARIANCE"][i] * ((random.random() * 2.0) - 1.0))))
+            if investdata["PRICE"][i] <= 50:
+                print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + "-" + str(investdata["NAME"][i]) + "Bankrupted!")
+                investdata["PRICE"][i] = 0
+                users = mclient.Invest.Userdata.find({"HAVE": {"$gt": 0}})
+                for user in users:
+                    user["HAVE"][i] = 0
+                    user["BUYPRICE"][i] = "휴지조각이 되었음"
+                    mclient.Invest.Userdata.update_one({"ID": user["ID"]}, {"$set": user})
+        mclient.Invest.System.update_one({"SYSTEM": "INVEST"}, {"$set": investdata})
+        await investlist(channel, dbpass)
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + "- Investment Renew Complete.")
+
+
+def investdbload(uid, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+    investdata = mclient.Invest.System.find_one({"SYSTEM": "INVEST"})
+    userdata = mclient.Invest.Userdata.find_one({"ID": uid})
+    if userdata is None:
+        havelist = []
+        pricelist = []
+        for i in range(0, len(investdata["NAME"])):
+            havelist.append(0)
+            pricelist.append(0)
+        mclient.Invest.Userdata.insert_one({"ID": uid, "HAVE": havelist, "BUYPRICE": pricelist})
+        userdata = mclient.Invest.Userdata.find_one({"ID": uid})
+    for i in range(0, (len(investdata["NAME"])-len(userdata["HAVE"]))):
+        userdata["HAVE"].append(0)
+        userdata["BUYPRICE"].append(0)
+    return investdata, userdata
+
+
+def investuserdbsave(userdata, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
+    mclient.Invest.Userdata.update_one({"ID": userdata["ID"]}, {"$set": userdata})
+
+
+
+
+
