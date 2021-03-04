@@ -97,7 +97,7 @@ async def on_message(message):
             elif cmdline[1] == "저금":
                 await points.pointsaving(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "디버그":
-                await channel.send("나중에 도박 기능이라던가 에러나면 쓸수 있도록.")
+                await commands.debug(message, cmdline, authinfo, dbpass)
             else:
                 await channel.send("지휘관, 무슨 말인지 모르겠어...졸려...같이 코~할래?")
     if message.content.startswith("!벤슨"):
