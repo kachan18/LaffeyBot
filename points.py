@@ -180,7 +180,8 @@ async def pointsaving(message, args, authinfo, dbpass):
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```도움말```",
                         value="!라피 저금 입금 (수량) : 입력한 수량만큼 포인트를 저금합니다.\n" +
-                              "!라피 저금 출금 (수량) : 입력한 수량만큼 포인트를 출금합니다.", inline=False)
+                              "!라피 저금 출금 (수량) : 입력한 수량만큼 포인트를 출금합니다.\n" +
+                              "!라피 저금 대출 : 아카시론에 포인트 대출에 대해 상담합니다.", inline=False)
         embed.add_field(name="```주의사항```",
                         value="```cs\n출금은 하루에 '1회'만 가능합니다!```", inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 현재 잔고```" % authinfo["NAME"],
@@ -207,6 +208,11 @@ async def pointsaving(message, args, authinfo, dbpass):
             await channel.send("지휘관...빚을 먼저 갚아야 해...")
             return
         await withdrawl(message, args, savedata, dbpass)
+    elif args[2] == "대출":
+        if savedata["SAVING"] > 0:
+            await channel.send("지휘관...저금한 포인트가 남아있어...")
+            return
+        await loan(message, args, savedata, dbpass)
     elif args[2] == "청산":
         if savedata["DEBT"] <= 0:
             await channel.send("지휘관...진 빚이 없는데...")
@@ -272,6 +278,47 @@ async def withdrawl(message, args, saveinfo, dbpass):
             await message.channel.send("지휘관 이미 오늘은 포인트를 가져갔어...")
 
 
+async def loan(message, args, saveinfo, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    if len(args) == 3:
+        embed = discord.Embed(title="아카시론", description="지휘관 포인트가 없어서 온거냥? 아카기가 '조금' 이자를 추가해서 빌려줄 수 있다냐.",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
+        embed.add_field(name="```도움말```",
+                        value="!라피 저금 대출 (수량) : 지정한 수량만큼 포인트를 대출합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출 시 '대출액'의 '0.5배'가 '이자'로 추가됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
+        embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
+                        value="```%d LP```" % saveinfo["POINTS"], inline=False)
+        embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
+                        value="```cs\n%d LP```" % saveinfo["DEBT"], inline=False)
+        await message.channel.send(embed=embed)
+        return
+    if len(args) != 4 or not args[3].isdigit():
+        await message.channel.send("지휘관, 사용법이 틀렸다냐 -아카시-")
+    elif int(args[3]) <= 0:
+        await message.channel.send("지금 장난하는거냥? 0 LP 를 빌릴수는 없다냐! -아카시-")
+    elif (int(args[3]) + saveinfo["DEBT"]) > 5000:
+        await message.channel.send("대출 한도 초과다냐. -아카시-")
+    else:
+        saveinfo["POINTS"] += int(args[3])
+        saveinfo["DEBT"] += int(int(args[3]) * 1.5)
+        embed = discord.Embed(title="아카시론", description="매번 고맙다냥~",
+                              color=0xf8f5ff)
+        if saveinfo["DEBT"] >= 5000:
+            embed = discord.Embed(title="아카시론", description="이제 대출 한도다냐. 더이상 빌려줄 수는 없다냐.",
+                                  color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
+        embed.add_field(name="```도움말```",
+                        value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.\n대출 시 대출액의 1.5배가 빚에 추가됩니다.\n대출 한도는 5000 LP입니다.", inline=False)
+        embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
+                        value="```%d LP```" % saveinfo["POINTS"], inline=False)
+        embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
+                        value="```cs\n%d LP```" % saveinfo["DEBT"], inline=False)
+        await message.channel.send(embed=embed)
+        mclient.Laffey.Data.update_one({"ID": saveinfo["ID"]}, {"$set": saveinfo})
+
+
 async def debtpayoff(message, args, saveinfo, dbpass):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     if len(args) != 4 or not args[3].isdigit():
@@ -291,7 +338,7 @@ async def debtpayoff(message, args, saveinfo, dbpass):
             embed = discord.Embed(title="아카시론", description="빚을 전부 다 갚았다냐. 수고했다냐.",
                                   color=0xf8f5ff)
         embed.set_thumbnail(
-            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+            url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
         embed.add_field(name="```도움말```",
                         value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.", inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
