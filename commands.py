@@ -173,10 +173,6 @@ async def debug(client, message, args, authinfo, dbpass):
             print("[FORCED] ↓")
             await points.investrenew(client, dbpass)
             await message.channel.send("투자 가격 변동 완료.")
-        elif args[2] == "재상장":
-            print("[FORCED] ↓")
-            await points.investrenew(client, dbpass)
-            await message.channel.send("투자 가격 변동 완료.")
         else:
             await message.channel.send("커맨드 인식 불가.")
     else:

@@ -5,26 +5,28 @@ import pymongo
 import asyncio
 
 
-def botpoint(channel, args, authinfo, dbpass):
+async def botpoint(channel, args, authinfo, dbpass):
     if len(args) == 2:
         embed = discord.Embed(title="(빤히)...지휘관한테 얼마나 있는지, 생각하고 있었어.",
                               description="!라피 포인트 보내기 (대상) (수량) : 포인트를 보낼 수 있습니다.\n!라피 포인트 확인 (대상) : 대상의 포인트 확인이 가능합니다." +
-                                          "\n!라피 포인트 빌리기 : 포인트가 없으면 100 LP를 빌립니다.(빚에 110 LP가 추가됩니다)",
+                                          "\n!라피 포인트 구제 : 포인트가 없으면 100 LP를 받습니다.",
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
             embed.add_field(name="```%s 지휘관의 남은 빚```" % authinfo["NAME"], value="```cs\n%d LP```" % authinfo["DEBT"], inline=False)
-        return channel.send(embed=embed)
+        await channel.send(embed=embed)
     elif args[2] == "확인":
-        return pointcheck(channel, args, dbpass)
+        await pointcheck(channel, args, dbpass)
     elif args[2] == "보내기":
         if authinfo["DEBT"] > 0:
-            return channel.send("지휘관, 빚이 있으면 다른 지휘관한테 포인트를 보낼 수 없어...")
-        return pointsend(channel, args, authinfo, dbpass)
-    elif args[2] == "빌리기":
-        return pointsavior(channel, authinfo, dbpass)
+            await channel.send("지휘관, 빚이 있으면 다른 지휘관한테 포인트를 보낼 수 없어...")
+        await pointsend(channel, args, authinfo, dbpass)
+    elif args[2] == "구제":
+        await pointsavior(channel, authinfo, dbpass)
+    elif args[2] == "기부":
+        await pointdonate(channel, args, authinfo, dbpass)
     else:
-        return channel.send("지휘관, 알 수 없는 명령어야...")
+        await channel.send("지휘관, 알 수 없는 명령어야...")
 
 
 def pointcheck(channel, args, dbpass):
@@ -71,13 +73,13 @@ def pointsavior(channel, authinfo, dbpass):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     info = mclient.Laffey.Data.find_one({"ID": authinfo["ID"]})
     if info["POINTS"] <= 0:
-        mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] + 100, "DEBT": info["DEBT"] + 110}})
+        mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": {"POINTS": info["POINTS"] + 100}})
         tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
         mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"COUNT": tempvar["COUNT"]+1, "SAVING": tempvar["SAVING"]-100}})
         if int(tempvar["SAVING"]) <= 0:
             return channel.send("누군가 라피의 용돈을 전부 빌려가버렸어...이제 남은 용돈이 없어...")
         embed = discord.Embed(title="지휘관...... 혹시, 빈털털이...?",
-                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP) (빚 + 110 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
+                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
                               color=0xf8f5ff)
         return channel.send(embed=embed)
     else:
@@ -85,6 +87,63 @@ def pointsavior(channel, authinfo, dbpass):
                               description="빈털털이가 아니잖아...",
                               color=0xf8f5ff)
         return channel.send(embed=embed)
+
+
+async def pointdonate(channel, args, authinfo, dbpass):
+    if len(args) == 3:
+        mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+        tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
+        donateid = -1
+        for i in range(0, len(tempvar["DONATELIST"]["ID"])):
+            if authinfo["ID"] == tempvar["DONATELIST"]["ID"][i]:
+                donateid = i
+                break
+        if donateid == -1:
+            tempvar["DONATELIST"]["ID"].append(authinfo["ID"])
+            tempvar["DONATELIST"]["NAME"].append(authinfo["NAME"])
+            tempvar["DONATELIST"]["TOTAL"].append(0)
+        else:
+            tempvar["DONATELIST"]["NAME"][donateid] = authinfo["NAME"]
+        embed = discord.Embed(title="지휘관, 지금까지 얼마나 기부했는지 알려줄게...",
+                              description="!라피 포인트 기부 (수량) : 지정한 양의 포인트를 기부합니다.",
+                              color=0xf8f5ff)
+        embed.add_field(name="```%s 지휘관의 총 기부액```" % tempvar["DONATELIST"]["NAME"][donateid], value="```%d LP```" % tempvar["DONATELIST"]["TOTAL"][donateid], inline=False)
+        embed.add_field(name="```라피의 남은 용돈```", value="```%d LP```" % tempvar["SAVING"], inline=False)
+        await channel.send(embed=embed)
+    elif len(args) == 4:
+        if (not args[3].isdigit()) or int(args[3]) <= 0:
+            await channel.send("지휘관, 기부할 양을 제대로 적어줘...")
+            return
+        if authinfo["POINTS"] < int(args[3]):
+            await channel.send("지휘관, 포인트가 모자라...")
+            return
+        mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+        tempvar = mclient.Laffey.Data.find_one({"ID": 1004})
+        tempvar["SAVING"] += int(args[3])
+        authinfo["POINTS"] -= int(args[3])
+        donateid = -1
+        for i in range(0, len(tempvar["DONATELIST"]["ID"])):
+            if authinfo["ID"] == tempvar["DONATELIST"]["ID"][i]:
+                donateid = i
+                break
+        if donateid == -1:
+            tempvar["DONATELIST"]["ID"].append(authinfo["ID"])
+            tempvar["DONATELIST"]["NAME"].append(authinfo["NAME"])
+            tempvar["DONATELIST"]["TOTAL"].append(int(args[3]))
+        else:
+            tempvar["DONATELIST"]["NAME"][donateid] = authinfo["NAME"]
+            tempvar["DONATELIST"]["TOTAL"][donateid] += int(args[3])
+        mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
+        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": tempvar})
+        embed = discord.Embed(title="지휘관, 기부 고마워...",
+                              description="성공적으로 %s 포인트를 기부하였습니다." % args[3],
+                              color=0xf8f5ff)
+        embed.add_field(name="```%s 지휘관의 남은 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
+        embed.add_field(name="```%s 지휘관의 총 기부액```" % tempvar["DONATELIST"]["NAME"][donateid], value="```%d LP```" % tempvar["DONATELIST"]["TOTAL"][donateid], inline=False)
+        embed.add_field(name="```라피의 남은 용돈```", value="```%d LP```" % tempvar["SAVING"], inline=False)
+        await channel.send(embed=embed)
+    else:
+        await channel.send("지휘관, 사용법이 틀린 것 같아...")
 
 
 async def pointearning(message, args, authinfo, dbpass):
@@ -513,7 +572,7 @@ async def investrenew(channel, dbpass):
         for i in range(0, len(investdata["NAME"])):
             investdata["PRICE"][i] = int(investdata["PRICE"][i] * (1.0 - (investdata["VARIANCE"][i] * ((random.random() * 2.0) - 1.0))))
             if investdata["PRICE"][i] <= 50:
-                print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + "-" + str(investdata["NAME"][i]) + " Bankrupted!")
+                print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - " + str(investdata["NAME"][i]) + " Bankrupted!")
                 investdata["PRICE"][i] = 0
                 users = mclient.Invest.Userdata.find({"HAVE": {"$gt": 0}})
                 for user in users:
@@ -524,7 +583,7 @@ async def investrenew(channel, dbpass):
                 await channel.send("```[ %s ] 이(가) 상장폐지 이후 재상장되었습니다.```" % investdata["NAME"][i])
         mclient.Invest.System.update_one({"SYSTEM": "INVEST"}, {"$set": investdata})
         await investlist(channel, dbpass)
-        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + "- Investment Renew Complete.")
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - Investment Renew Complete.")
 
 
 def investdbload(uid, dbpass):
