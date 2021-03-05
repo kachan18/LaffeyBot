@@ -125,6 +125,7 @@ async def invest_renewing():
 
 
 # 수동 토큰 설정시
+
 access_token = os.environ["BOT_TOKEN"]
 invest_renewing.start()
 client.run(access_token)
