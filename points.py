@@ -102,6 +102,7 @@ async def pointdonate(channel, args, authinfo, dbpass):
             tempvar["DONATELIST"]["ID"].append(authinfo["ID"])
             tempvar["DONATELIST"]["NAME"].append(authinfo["NAME"])
             tempvar["DONATELIST"]["TOTAL"].append(0)
+            mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": tempvar})
         else:
             tempvar["DONATELIST"]["NAME"][donateid] = authinfo["NAME"]
         embed = discord.Embed(title="지휘관, 지금까지 얼마나 기부했는지 알려줄게...",
