@@ -790,7 +790,7 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
             return
         if args[4].isdigit() and args[5].isdigit() and args[6].isdigit() and args[7].isdigit() and args[8].isdigit():
             if len(set(args[4:9])) == len(args[4:9]):
-                numbers = args[4:9]
+                numbers = [int(args[4]),int(args[5]),int(args[6]),int(args[7]),int(args[8])]
                 numbers.sort()
                 if numbers[0] <= 0 or numbers[4] >= 32:
                     await channel.send("지휘관, 유효하지 않은 숫자가 들어있어...")
