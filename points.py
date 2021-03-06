@@ -631,7 +631,7 @@ async def lottery(message, args, authinfo, dbpass):
                               "!라피 복권 라피볼 : 라피볼에 대해 열람합니다.", inline=False)
         embed.add_field(name="```도움말```",
                         value="```cs\n1. 복권은 매일 '15장'까지 구매가 가능합니다." +
-                              "\n2. 라피볼은 매 회차당 10장까지 구매가 가능하며 매일 '오후 6시'에 추첨이 진행됩니다." +
+                              "\n2. 라피볼은 매 회차당 5장까지 구매가 가능하며 매일 '오후 6시'에 추첨이 진행됩니다." +
                               "\n3. 복권은 매일 '오전 0시'에 초기화됩니다.```", inline=False)
         await channel.send(embed=embed)
     elif args[2] in ["목록", "종류"]:
@@ -784,8 +784,8 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
                         value="%s" % balls, inline=False)
         await channel.send(embed=embed)
     elif len(args) == 9 and (args[3] in ["구매", "사기"]):
-        if userdata["COUNTS"][1] >= 10:
-            await channel.send("지휘관...라피볼은 회차마다 10장밖에 구입할 수 없어...( 현재 구매량 : %d )" % userdata["COUNTS"][1])
+        if userdata["COUNTS"][1] >= 5:
+            await channel.send("지휘관...라피볼은 회차마다 5장밖에 구입할 수 없어...( 현재 구매량 : %d )" % userdata["COUNTS"][1])
             return
         if lotterydata["PRICE"] > authinfo["POINTS"]:
             await channel.send("지휘관...포인트가 모자라...")
