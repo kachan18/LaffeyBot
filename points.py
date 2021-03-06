@@ -567,7 +567,7 @@ async def investsell(channel, args, authinfo, dbpass):
         await channel.send("지휘관, 그런 이름의 투자처는 없어...")
 
 
-async def investrenew(channel, dbpass):
+async def investrenew(channel, dbpass, isbot):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
     investdata = mclient.Invest.System.find_one({"SYSTEM": "INVEST"})
     if investdata["OPERATING"] is True:
@@ -586,9 +586,9 @@ async def investrenew(channel, dbpass):
                     user["BUYPRICE"][i] = "휴지조각이 되었음"
                     mclient.Invest.Userdata.update_one({"ID": user["ID"]}, {"$set": user})
                 investdata["PRICE"][i] = investdata["FIRSTPRICE"][i]
-                await channel.send("```[ %s ] 이(가) 상장폐지 이후 재상장되었습니다.```" % investdata["NAME"][i])
+                if isbot is True:
+                    await channel.send("```[ %s ] 이(가) 상장폐지 이후 재상장되었습니다.```" % investdata["NAME"][i])
         mclient.Invest.System.update_one({"SYSTEM": "INVEST"}, {"$set": investdata})
-        await investlist(channel, dbpass)
         print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - Investment Renew Complete.")
 
 
@@ -650,12 +650,12 @@ async def lotterylist(channel, dbpass):
     lotlist = []
     for i in range(0, len(lotterydata["NAME"])):
         if lotterydata["COUNT"][i] <= 0:
-            lotlist.append(str(i + 1) + ". " + lotlist["NAME"][i] +
+            lotlist.append(str(i + 1) + ". " + lotterydata["NAME"][i] +
                            " : 품절됨.")
             continue
-        lotlist.append(str(i+1) + ". " + lotlist["NAME"][i] +
-                       " : 개당 " + str(lotlist["PRICE"][i]) +
-                       " LP\n  남은 수량 : "+str(lotlist["COUNT"][i])+" 개")
+        lotlist.append(str(i + 1) + ". " + lotterydata["NAME"][i] +
+                       " : 개당 " + str(lotterydata["PRICE"][i]) +
+                       " LP\n  남은 수량 : " + str(lotterydata["COUNT"][i]) + " 개")
     lotlist = "\n".join(lotlist)
     embed = discord.Embed(title="복권", description="지휘관, 복권에 대해 궁금해...?",
                           color=0xf8f5ff)
@@ -667,7 +667,34 @@ async def lotterylist(channel, dbpass):
 
 
 async def lotteryinfo(channel, name, dbpass):
-    await channel.send("제작중.")
+    lotterydata = lotterydbload(0, dbpass, False)
+    num = -1
+    for i in range(0, len(lotterydata["NAME"])):
+        if name == lotterydata["NAME"][i]:
+            num = i
+            break
+    if num != -1:
+        initial = []
+        current = []
+        for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
+            initial.append(str(i + 1) + ". " + str(lotterydata["WINDATA"][num]["NAME"][i]) + " : " + str(lotterydata["WINDATA"][num]["COUNT"][i]) +
+                           " 개\n  당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
+        for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
+            current.append(str(i + 1) + ". " + str(lotterydata["WINDATA"][num]["NAME"][i]) + " : " + str(lotterydata["DATA"].count(lotterydata["WINDATA"][num]["NAME"][i])) +
+                           " 개\n  당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
+        initial = "\n".join(initial)
+        current = "\n".join(current)
+        embed = discord.Embed(title="복권", description="지휘관, [ %s ]에 대한 정보를 가져왔어..." % name,
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```당첨금```",
+                        value="%d 개" % initial, inline=False)
+        embed.add_field(name="```남은 당첨금```",
+                        value="%s" % current, inline=False)
+        await channel.send(embed=embed)
+    else:
+        await channel.send("지휘관... 그런 이름의 복권은 없어...")
     return
 
 
@@ -677,7 +704,7 @@ async def lotterybuy(channel, args, authinfo, dbpass):
     if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
         await channel.send("지휘관 사용법이 틀린 것 같아...")
     elif args[3] in lotterydata["NAME"]:
-        if (userdata["COUNT"][0] + int(args[4])) > 10:
+        if (userdata["COUNTS"][0] + int(args[4])) > 10:
             await channel.send("지휘관...이미 복권을 10번 구입했어...")
             return
         for i in range(0, len(lotterydata["NAME"])):
@@ -689,13 +716,15 @@ async def lotterybuy(channel, args, authinfo, dbpass):
             return
         if lotterydata["PRICE"][int(args[3])] * int(args[4]) <= authinfo["POINTS"]:
             authinfo["POINTS"] -= lotterydata["PRICE"][int(args[3])] * int(args[4])
+            userdata["COUNTS"][0] += int(args[4])
+            lotterydata["COUNT"][int(args[3])] -= int(args[4])
             result = []
             total = 0
             for i in range(0, int(args[4])):
                 res = lotterydata["DATA"][int(args[3])].pop()
                 authinfo["POINTS"] += lotterydata["WIN"][int(args[3])][res]
                 total += lotterydata["WIN"][int(args[3])][res]
-                result.append(str(i+1)+". "+res+" - 당첨금 : "+lotterydata["WIN"][int(args[3])][res]+" LP")
+                result.append(str(i+1)+". "+res+" - 당첨금 : "+str(lotterydata["WIN"][int(args[3])][res])+" LP")
             result.append("총 당첨금 : "+str(total)+" LP")
             result = "\n".join(result)
             embed = discord.Embed(title="복권", description="지휘관, 성공적으로 구매를 완료했어...",
@@ -758,8 +787,10 @@ def lotteryrestock(name, dbpass):
         for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
             for j in range(0, lotterydata["WINDATA"][num]["COUNT"][i]):
                 lotterydata["DATA"][num].append(lotterydata["WINDATA"][num]["NAME"][i])
+        random.shuffle(lotterydata["DATA"][num])
         lotterydata["COUNT"][num] = lotterydata["FIRSTCOUNT"][num]
         lotterydbsave(lotterydata, dbpass, False)
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - " + str(name) + " 재보급 완료!")
     else:
         print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - "+str(name)+" is Not Exist")
     return

@@ -101,6 +101,8 @@ async def on_message(message):
                 await points.pointsaving(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "투자":
                 await points.pointinvest(message, cmdline, authinfo, dbpass)
+            elif cmdline[1] == "복권":
+                await points.lottery(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "디버그":
                 await commands.debug(client, message, cmdline, authinfo, dbpass)
             else:
@@ -121,7 +123,8 @@ async def on_message(message):
 async def invest_renewing():
     await client.wait_until_ready()
     cha = discord.Client.get_channel(client, 817014562561851442)
-    await points.investrenew(cha, dbpass)
+    await points.investrenew(cha, dbpass, True)
+    await points.investlist(cha, dbpass)
 
 
 # 수동 토큰 설정시
