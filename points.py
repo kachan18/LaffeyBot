@@ -677,11 +677,11 @@ async def lotteryinfo(channel, name, dbpass):
         initial = []
         current = []
         for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
-            initial.append(str(i + 1) + ". " + str(lotterydata["WINDATA"][num]["NAME"][i]) + " : " + str(lotterydata["WINDATA"][num]["COUNT"][i]) +
-                           " 개\n  당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
+            initial.append(str(i + 1) + ". '" + str(lotterydata["WINDATA"][num]["NAME"][i]) + "' : " + str(lotterydata["WINDATA"][num]["COUNT"][i]) +
+                           " 개 / 당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
         for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
-            current.append(str(i + 1) + ". " + str(lotterydata["WINDATA"][num]["NAME"][i]) + " : " + str(lotterydata["DATA"].count(lotterydata["WINDATA"][num]["NAME"][i])) +
-                           " 개\n  당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
+            current.append(str(i + 1) + ". '" + str(lotterydata["WINDATA"][num]["NAME"][i]) + "' : " + str(lotterydata["DATA"][num].count(lotterydata["WINDATA"][num]["NAME"][i])) +
+                           " 개 / 당첨금 : " + str(lotterydata["WIN"][num][lotterydata["WINDATA"][num]["NAME"][i]]) + " LP")
         initial = "\n".join(initial)
         current = "\n".join(current)
         embed = discord.Embed(title="복권", description="지휘관, [ %s ]에 대한 정보를 가져왔어..." % name,
@@ -689,9 +689,9 @@ async def lotteryinfo(channel, name, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```초기 당첨금```",
-                        value="%s" % initial, inline=False)
+                        value="```%s```" % initial, inline=False)
         embed.add_field(name="```남은 당첨금```",
-                        value="%s" % current, inline=False)
+                        value="```%s```" % current, inline=False)
         await channel.send(embed=embed)
     else:
         await channel.send("지휘관... 그런 이름의 복권은 없어...")
@@ -803,3 +803,4 @@ def lotterylimitreset(dbpass):
         user["COUNTS"][0] = 0
         user["COUNTS"][1] = 0
         mclient.Invest.Userdata.update_one({"ID": user["ID"]}, {"$set": user})
+    print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 복권 구매 횟수 초기화 완료!")
