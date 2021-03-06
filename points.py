@@ -868,6 +868,23 @@ def lotteryrestock(name, dbpass):
     return
 
 
+def lotteryrestockall(dbpass):
+    lotterydata = lotterydbload(0, dbpass, False)
+    if lotterydata is None:
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - DB Data Not Found")
+        return
+    for k in range(0, len(lotterydata["NAME"])):
+        lotterydata["DATA"][k] = []
+        for i in range(0, len(lotterydata["WINDATA"][k]["NAME"])):
+            for j in range(0, lotterydata["WINDATA"][k]["COUNT"][i]):
+                lotterydata["DATA"][k].append(lotterydata["WINDATA"][k]["NAME"][i])
+        random.shuffle(lotterydata["DATA"][k])
+        lotterydata["COUNT"][k] = lotterydata["FIRSTCOUNT"][k]
+        lotterydbsave(lotterydata, dbpass, False)
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 모든 복권 재보급 완료!")
+    return
+
+
 def lotterylimitreset(dbpass):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     users = mclient.Laffey.Lottery.find({"ID": {"$gt": 0}})
