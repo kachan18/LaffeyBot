@@ -626,12 +626,12 @@ async def lottery(message, args, authinfo, dbpass):
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```명령어```",
                         value="!라피 복권 [목록|종류] : 복권 종류을 열람합니다.\n" +
-                              "!라피 복권 정보 (이름) : 해당 복권에 대한 자세한 정보를 열람합니다. 제작중.\n" +
+                              "!라피 복권 정보 (이름) : 해당 복권에 대한 자세한 정보를 열람합니다.\n" +
                               "!라피 복권 구매 (이름) (개수) : 해당 복권을 구매합니다.\n" +
-                              "!라피 복권 로또 : 로또에 대해 열람합니다. 제작중.", inline=False)
+                              "!라피 복권 라피볼 : 라피볼에 대해 열람합니다.", inline=False)
         embed.add_field(name="```도움말```",
-                        value="```cs\n1. 복권과 로또는 하루에 각각 '10장'까지 구매가 가능합니다." +
-                              "\n2. 로또는 매일 '오후 6시'에 추첨이 진행됩니다." +
+                        value="```cs\n1. 복권은 매일 '15장'까지 구매가 가능합니다." +
+                              "\n2. 라피볼은 매 회차당 10장까지 구매가 가능하며 매일 '오후 6시'에 추첨이 진행됩니다." +
                               "\n3. 복권은 매일 '오전 0시'에 초기화됩니다.```", inline=False)
         await channel.send(embed=embed)
     elif args[2] in ["목록", "종류"]:
@@ -640,8 +640,8 @@ async def lottery(message, args, authinfo, dbpass):
         await lotteryinfo(channel, args[3], dbpass)
     elif args[2] in ["구매", "사기"]:
         await lotterybuy(channel, args, authinfo, dbpass)
-    elif args[2] in ["로또"]:
-        await lotterylottery(channel, args, authinfo, dbpass)
+    elif args[2] in ["라피볼"]:
+        await lotterylaffeyball(channel, args, authinfo, dbpass)
     else:
         await channel.send("지휘관, 알 수 없는 명령어야...")
 
@@ -705,8 +705,8 @@ async def lotterybuy(channel, args, authinfo, dbpass):
     if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
         await channel.send("지휘관 사용법이 틀린 것 같아...")
     elif args[3] in lotterydata["NAME"]:
-        if (userdata["COUNTS"][0] + int(args[4])) > 10:
-            await channel.send("지휘관...복권은 하루에 10장밖에 구입할 수 없어...")
+        if (userdata["COUNTS"][0] + int(args[4])) > 15:
+            await channel.send("지휘관...복권은 하루에 15장밖에 구입할 수 없어...( 현재 구매량 : %d )" % userdata["COUNTS"][0])
             return
         for i in range(0, len(lotterydata["NAME"])):
             if args[3] == lotterydata["NAME"][i]:
@@ -745,20 +745,88 @@ async def lotterybuy(channel, args, authinfo, dbpass):
         await channel.send("지휘관, 그런 이름의 복권은 없어...")
 
 
-async def lotterylottery(channel, args, authinfo, dbpass):
-    await channel.send("제작중.")
-    return
+async def lotterylaffeyball(channel, args, authinfo, dbpass):
+    lotterydata = lotterydbload(1, dbpass, False)
+    userdata = lotterydbload(authinfo["ID"], dbpass, True)
+    if len(args) == 3:
+        embed = discord.Embed(title="복권", description="지휘관, 라피볼에 대해 궁금해...?",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```도움말```",
+                        value="```!라피 복권 라피볼 확인 : 현재 가지고 있는 라피볼을 확인합니다.\n" +
+                              "!라피 복권 라피볼 구매 (번호) (번호) (번호) (번호) (번호) : 해당 번호로 라피볼을 구매합니다.```", inline=False)
+        embed.add_field(name="```당첨 방식```",
+                        value="```1~31의 31개의 번호 중 5개를 라피가 뽑습니다. 해당 등수에 당첨이 중복된다면 n분의 1로 당첨금을 분할합니다.\n" +
+                              "1등 : 다섯 개의 번호 일치 / 당첨금 : %d LP\n" % lotterydata["WIN"][0] +
+                              "2등 : 네 개의 번호 일치 / 당첨금 : %d LP\n" % lotterydata["WIN"][1] +
+                              "3등 : 세 개의 번호 일치 / 당첨금 : %d LP\n" % lotterydata["WIN"][2] +
+                              "4등 : 두 개의 번호 일치 / 당첨금 : %d LP\n```" % lotterydata["WIN"][3], inline=False)
+        embed.add_field(name="```현재 회차```",
+                        value="%d 회" % lotterydata["ROUND"], inline=False)
+        embed.add_field(name="```지난 회차 당첨 번호```",
+                        value="%d %d %d %d %d" % (lotterydata["NUMBERS"][lotterydata["ROUND"]-1][0], lotterydata["NUMBERS"][lotterydata["ROUND"]-1][1], lotterydata["NUMBERS"][lotterydata["ROUND"]-1][2], lotterydata["NUMBERS"][lotterydata["ROUND"]-1][3], lotterydata["NUMBERS"][lotterydata["ROUND"]-1][4]), inline=False)
+        await channel.send(embed=embed)
+        return
+    elif len(args) == 4 and (args[3] in ["확인", "보유"]):
+        balls = []
+        for i in range(0, len(userdata["LAFFEYBALL"])):
+            temp = " ".join(userdata["LAFFEYBALL"][i])
+            balls.append(str(i+1) + ". " + str(temp))
+        balls = "\n".join(balls)
+        embed = discord.Embed(title="복권", description="지휘관, 지휘관이 가지고 있는 라피볼을 가져왔어...",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```라피볼 목록```",
+                        value="%s" % balls, inline=False)
+        await channel.send(embed=embed)
+    elif len(args) == 9 and (args[3] in ["구매", "사기"]):
+        if userdata["COUNTS"][1] >= 10:
+            await channel.send("지휘관...라피볼은 회차마다 10장밖에 구입할 수 없어...( 현재 구매량 : %d )" % userdata["COUNTS"][1])
+            return
+        if lotterydata["PRICE"] > authinfo["POINTS"]:
+            await channel.send("지휘관...포인트가 모자라...")
+            return
+        if args[4].isdigit() and args[5].isdigit() and args[6].isdigit() and args[7].isdigit() and args[8].isdigit():
+            if len(set(args[4:9])) == len(args[4:9]):
+                numbers = args[4:9]
+                numbers.sort()
+                if numbers[0] <= 0 or numbers[4] >= 32:
+                    await channel.send("지휘관, 유효하지 않은 숫자가 들어있어...")
+                    return
+                authinfo["POINTS"] -= lotterydata["PRICE"]
+                userdata["LAFFEYBALL"].append(args[4:9])
+                lotterydbsave(userdata, dbpass, True)
+                mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+                mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
+                embed = discord.Embed(title="복권", description="지휘관, 성공적으로 라피볼을 1장 구매했어.",
+                                      color=0xf8f5ff)
+                embed.set_thumbnail(
+                    url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+                embed.add_field(name="```구매 번호```",
+                                value="%d %d %d %d %d" % (args[4], args[5], args[6], args[7], args[8]), inline=False)
+                await channel.send(embed=embed)
+            else:
+                await channel.send("지휘관, 중복된 숫자는 사용할 수 없어...")
+        else:
+            await channel.send("지휘관, 제대로 번호를 입력해줘...")
+    else:
+        await channel.send("지휘관... 알 수 없는 명령어인 것 같아...")
 
 
 def lotterydbload(uid, dbpass, isuser):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     if isuser is False:
-        lotterydata = mclient.Laffey.Lottery.find_one({"SYSTEM": "LOTTERY"})
+        if uid == 1:
+            lotterydata = mclient.Laffey.Lottery.find_one({"SYSTEM": "LAFFEYBALL"})
+        else:
+            lotterydata = mclient.Laffey.Lottery.find_one({"SYSTEM": "LOTTERY"})
         return lotterydata
     else:
         userdata = mclient.Laffey.Lottery.find_one({"ID": uid})
         if userdata is None:
-            mclient.Laffey.Lottery.insert_one({"ID": uid, "LOTTERY": [], "COUNTS": [0, 0]})
+            mclient.Laffey.Lottery.insert_one({"ID": uid, "LAFFEYBALL": [], "COUNTS": [0, 0]})
             userdata = mclient.Laffey.Lottery.find_one({"ID": uid})
         return userdata
 
@@ -769,7 +837,7 @@ def lotterydbsave(data, dbpass, isuser):
         mclient.Laffey.Lottery.update_one({"ID": data["ID"]}, {"$set": data})
         return
     else:
-        mclient.Laffey.Lottery.update_one({"SYSTEM": "LOTTERY"}, {"$set": data})
+        mclient.Laffey.Lottery.update_one({"SYSTEM": data["SYSTEM"]}, {"$set": data})
         return
 
 
@@ -802,6 +870,66 @@ def lotterylimitreset(dbpass):
     users = mclient.Laffey.Lottery.find({"ID": {"$gt": 0}})
     for user in users:
         user["COUNTS"][0] = 0
-        user["COUNTS"][1] = 0
-        mclient.Invest.Userdata.update_one({"ID": user["ID"]}, {"$set": user})
+        mclient.Laffey.Lottery.update_one({"ID": user["ID"]}, {"$set": user})
     print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 복권 구매 횟수 초기화 완료!")
+
+
+async def lotterytimeoflaffeyball(channel, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    users = mclient.Laffey.Lottery.find({"ID": {"$gt": 0}})
+    laffeyballdata = lotterydbload(1, dbpass, False)
+    numbers = random.sample(list(range(1, 32)), 5)
+    embed = discord.Embed(title="라피볼 추첨", description="과연 라피볼 당첨자는...!",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```이번 회차```",
+                    value="%d 회" % laffeyballdata["ROUND"], inline=False)
+    embed.add_field(name="```라피볼 번호```",
+                    value="%d %d %d %d %d" % (numbers[0], numbers[1], numbers[2], numbers[3], numbers[4]), inline=False)
+    await channel.send(embed=embed)
+    laffeyballdata["NUMBERS"].append(numbers)
+    numbers = numbers.sort()
+    winlist = [[], [], [], []]
+    for user in users:
+        for i in range(0, len(user["LAFFEYBALL"])):
+            temp = user["LAFFEYBALL"][i].sort()
+            if len(set(numbers+temp)) == 5:
+                winlist[0].append(user["ID"])
+            elif len(set(numbers+temp)) == 6:
+                winlist[1].append(user["ID"])
+            elif len(set(numbers + temp)) == 7:
+                winlist[2].append(user["ID"])
+            elif len(set(numbers + temp)) == 8:
+                winlist[3].append(user["ID"])
+        user["COUNTS"][1] = 0
+        user["LAFFEYBALL"] = []
+        mclient.Laffey.Laffeyball.update_one({"ID": user["ID"]}, {"$set": user})
+    laffeyballdata["WINLIST"] = laffeyballdata["WINLIST"]+[winlist]
+    await asyncio.sleep(1)
+    winners = []
+    for i in range(0, 4):
+        tempwin = []
+        for j in range(0, len(winlist[i])):
+            tempuser = mclient.Laffey.Data.find_one({"ID": winlist[i][j]})
+            if i == 3:
+                tempuser["POINTS"] += laffeyballdata["WIN"][i]
+            else:
+                tempuser["POINTS"] += int(laffeyballdata["WIN"][i] * (1.0 / len(winlist[i])))
+            mclient.Laffey.Data.update_one({"ID": winlist[i][j]}, {"$set": tempuser})
+            tempwin.append(tempuser["NAME"])
+        tempwin = " ".join(tempwin)
+        winners.append(str(i + 1) + "등 : "+str(tempwin))
+    winners = "\n".join(winners)
+    embed = discord.Embed(title="라피볼 추첨", description="당첨자 발표!",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```회차```",
+                    value="%d 회" % laffeyballdata["ROUND"], inline=False)
+    embed.add_field(name="```당첨자```",
+                    value="%s" % winners, inline=False)
+    await channel.send(embed=embed)
+    laffeyballdata["ROUND"] += 1
+    lotterydbsave(laffeyballdata, dbpass, False)
+    print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 라피볼 추첨 완료!")

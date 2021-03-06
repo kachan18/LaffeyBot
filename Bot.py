@@ -124,10 +124,13 @@ async def on_message(message):
 async def laffeybotloop():
     await client.wait_until_ready()
     invest_channel = discord.Client.get_channel(client, 817014562561851442)
+    lottery_channel = discord.Client.get_channel(client, 817685271453499432)
     await points.investrenew(invest_channel, dbpass, True)
     await points.investlist(invest_channel, dbpass)
     if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%H%M") == "0000":
         await points.lotterylimitreset(dbpass)
+    if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%H%M") == "1800":
+        await points.lotterytimeoflaffeyball(lottery_channel, dbpass)
 
 
 # 수동 토큰 설정시

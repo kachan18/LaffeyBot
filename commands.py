@@ -178,6 +178,11 @@ async def debug(client, message, args, authinfo, dbpass):
             print("[FORCED] ↓")
             points.lotteryrestock(args[3], dbpass)
             await message.channel.send("복권 재보급 완료.")
+        elif args[2] == "라피볼진행":
+            print("[FORCED] ↓")
+            lottery_channel = discord.Client.get_channel(client, 817685271453499432)
+            await points.lotterytimeoflaffeyball(lottery_channel, dbpass)
+            await message.channel.send("라피볼 진행 완료.")
         else:
             await message.channel.send("커맨드 인식 불가.")
     else:
