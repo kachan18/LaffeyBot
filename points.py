@@ -892,11 +892,12 @@ async def lotterytimeoflaffeyball(channel, dbpass):
                     value="%d %d %d %d %d" % (numbers[0], numbers[1], numbers[2], numbers[3], numbers[4]), inline=False)
     await channel.send(embed=embed)
     laffeyballdata["NUMBERS"].append(numbers)
-    numbers = numbers.sort()
+    numbers.sort()
     winlist = [[], [], [], []]
     for user in users:
         for i in range(0, len(user["LAFFEYBALL"])):
-            temp = user["LAFFEYBALL"][i].sort()
+            temp = user["LAFFEYBALL"][i].copy()
+            temp.sort()
             if len(set(numbers+temp)) == 5:
                 winlist[0].append(user["ID"])
             elif len(set(numbers+temp)) == 6:
