@@ -756,6 +756,8 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
         embed.add_field(name="```도움말```",
                         value="```!라피 복권 라피볼 확인 : 현재 가지고 있는 라피볼을 확인합니다.\n" +
                               "!라피 복권 라피볼 구매 (번호) (번호) (번호) (번호) (번호) : 해당 번호로 라피볼을 구매합니다.```", inline=False)
+        embed.add_field(name="```가격```",
+                        value="%d LP" % lotterydata["PRICE"], inline=False)
         embed.add_field(name="```당첨 방식```",
                         value="```1~31의 31개의 번호 중 5개를 라피가 뽑습니다. 해당 등수에 당첨이 중복된다면 n분의 1로 당첨금을 분할합니다.\n" +
                               "1등 : 다섯 개의 번호 일치 / 당첨금 : %d LP\n" % lotterydata["WIN"][0] +
