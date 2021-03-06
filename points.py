@@ -21,7 +21,8 @@ async def botpoint(channel, args, authinfo, dbpass):
     elif args[2] == "보내기":
         if authinfo["DEBT"] > 0:
             await channel.send("지휘관, 빚이 있으면 다른 지휘관한테 포인트를 보낼 수 없어...")
-        await pointsend(channel, args, authinfo, dbpass)
+        else:
+            await pointsend(channel, args, authinfo, dbpass)
     elif args[2] == "구제":
         await pointsavior(channel, authinfo, dbpass)
     elif args[2] == "기부":
@@ -705,7 +706,7 @@ async def lotterybuy(channel, args, authinfo, dbpass):
         await channel.send("지휘관 사용법이 틀린 것 같아...")
     elif args[3] in lotterydata["NAME"]:
         if (userdata["COUNTS"][0] + int(args[4])) > 10:
-            await channel.send("지휘관...이미 복권을 10번 구입했어...")
+            await channel.send("지휘관...복권은 하루에 10장밖에 구입할 수 없어...")
             return
         for i in range(0, len(lotterydata["NAME"])):
             if args[3] == lotterydata["NAME"][i]:
