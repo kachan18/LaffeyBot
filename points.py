@@ -908,7 +908,7 @@ async def lotterytimeoflaffeyball(channel, dbpass):
                 winlist[3].append(user["ID"])
         user["COUNTS"][1] = 0
         user["LAFFEYBALL"] = []
-        mclient.Laffey.Laffeyball.update_one({"ID": user["ID"]}, {"$set": user})
+        mclient.Laffey.Lottery.update_one({"ID": user["ID"]}, {"$set": user})
     laffeyballdata["WINLIST"] = laffeyballdata["WINLIST"]+[winlist]
     await asyncio.sleep(1)
     winners = []
