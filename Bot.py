@@ -3,6 +3,7 @@ from discord.ext import tasks
 import asyncio
 import pymongo
 import os
+import datetime
 import commands
 import gamblefunction
 import gachafunction
@@ -120,14 +121,16 @@ async def on_message(message):
 
 
 @tasks.loop(minutes=10.0)
-async def invest_renewing():
+async def laffeybotloop():
     await client.wait_until_ready()
-    cha = discord.Client.get_channel(client, 817014562561851442)
-    await points.investrenew(cha, dbpass, True)
-    await points.investlist(cha, dbpass)
+    invest_channel = discord.Client.get_channel(client, 817014562561851442)
+    await points.investrenew(invest_channel, dbpass, True)
+    await points.investlist(invest_channel, dbpass)
+    if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%H%M") == "0000":
+        await points.lotterylimitreset(dbpass)
 
 
 # 수동 토큰 설정시
 access_token = os.environ["BOT_TOKEN"]
-invest_renewing.start()
+laffeybotloop.start()
 client.run(access_token)

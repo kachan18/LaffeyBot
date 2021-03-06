@@ -507,7 +507,7 @@ async def investcheck(channel, uid, dbpass):
 
 async def investbuy(channel, args, authinfo, dbpass):
     investdata, userdata = investdbload(authinfo["ID"], dbpass)
-    if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
+    if len(args) != 5 or (not args[4].isdigit()) or (args[4].isdigit() and int(args[4]) <= 0):
         await channel.send("지휘관 사용법이 틀린 것 같아...")
     elif args[3] in investdata["NAME"]:
         for i in range(0, len(investdata["NAME"])):
@@ -688,8 +688,8 @@ async def lotteryinfo(channel, name, dbpass):
                               color=0xf8f5ff)
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
-        embed.add_field(name="```당첨금```",
-                        value="%d 개" % initial, inline=False)
+        embed.add_field(name="```초기 당첨금```",
+                        value="%s" % initial, inline=False)
         embed.add_field(name="```남은 당첨금```",
                         value="%s" % current, inline=False)
         await channel.send(embed=embed)
