@@ -752,7 +752,7 @@ async def lotterylottery(channel, args, authinfo, dbpass):
 def lotterydbload(uid, dbpass, isuser):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
     if isuser is False:
-        lotterydata = mclient.Laffey.Lottery.find_one({"ID": "SYSTEM"})
+        lotterydata = mclient.Laffey.Lottery.find_one({"SYSTEM": "LOTTERY"})
         return lotterydata
     else:
         userdata = mclient.Laffey.Lottery.find_one({"ID": uid})
@@ -768,7 +768,7 @@ def lotterydbsave(data, dbpass, isuser):
         mclient.Laffey.Lottery.update_one({"ID": data["ID"]}, {"$set": data})
         return
     else:
-        mclient.Laffey.Lottery.update_one({"ID": "SYSTEM"}, {"$set": data})
+        mclient.Laffey.Lottery.update_one({"SYSTEM": "LOTTERY"}, {"$set": data})
         return
 
 
@@ -794,3 +794,12 @@ def lotteryrestock(name, dbpass):
     else:
         print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - "+str(name)+" is Not Exist")
     return
+
+
+def lotterylimitreset(dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    users = mclient.Laffey.Lottery.find({"ID": {"$gt": 0}})
+    for user in users:
+        user["COUNTS"][0] = 0
+        user["COUNTS"][1] = 0
+        mclient.Invest.Userdata.update_one({"ID": user["ID"]}, {"$set": user})
