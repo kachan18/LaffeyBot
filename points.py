@@ -636,7 +636,7 @@ async def lottery(message, args, authinfo, dbpass):
     elif args[2] in ["목록", "종류"]:
         await lotterylist(channel, dbpass)
     elif args[2] in ["정보"]:
-        await lotteryinfo(channel, args[4], dbpass)
+        await lotteryinfo(channel, args[3], dbpass)
     elif args[2] in ["구매", "사기"]:
         await lotterybuy(channel, args, authinfo, dbpass)
     elif args[2] in ["로또"]:
