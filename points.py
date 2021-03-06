@@ -792,13 +792,13 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
             return
         if args[4].isdigit() and args[5].isdigit() and args[6].isdigit() and args[7].isdigit() and args[8].isdigit():
             if len(set(args[4:9])) == len(args[4:9]):
-                numbers = [int(args[4]),int(args[5]),int(args[6]),int(args[7]),int(args[8])]
+                numbers = [int(args[4]), int(args[5]), int(args[6]), int(args[7]), int(args[8])]
                 numbers.sort()
                 if numbers[0] <= 0 or numbers[4] >= 32:
                     await channel.send("지휘관, 유효하지 않은 숫자가 들어있어...")
                     return
                 authinfo["POINTS"] -= lotterydata["PRICE"]
-                userdata["LAFFEYBALL"].append(args[4:9])
+                userdata["LAFFEYBALL"].append([int(args[4]), int(args[5]), int(args[6]), int(args[7]), int(args[8])])
                 lotterydbsave(userdata, dbpass, True)
                 mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
                 mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
@@ -807,7 +807,7 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
                 embed.set_thumbnail(
                     url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
                 embed.add_field(name="```구매 번호```",
-                                value="%d %d %d %d %d" % (args[4], args[5], args[6], args[7], args[8]), inline=False)
+                                value="%d %d %d %d %d" % (int(args[4]), int(args[5]), int(args[6]), int(args[7]), int(args[8])), inline=False)
                 await channel.send(embed=embed)
             else:
                 await channel.send("지휘관, 중복된 숫자는 사용할 수 없어...")
