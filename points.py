@@ -5,11 +5,12 @@ import pymongo
 import asyncio
 
 
+# 포인트 함수
 async def botpoint(channel, args, authinfo, dbpass):
     if len(args) == 2:
         embed = discord.Embed(title="(빤히)...지휘관한테 얼마나 있는지, 생각하고 있었어.",
                               description="!라피 포인트 보내기 (대상) (수량) : 포인트를 보낼 수 있습니다.\n!라피 포인트 확인 (대상) : 대상의 포인트 확인이 가능합니다." +
-                                          "\n!라피 포인트 구제 : 포인트가 없으면 100 LP를 받습니다.",
+                                          "\n!라피 포인트 구제 : 포인트가 없으면 100 LP를 받습니다.\n!라피 포인트 기부 : 기부 기능을 열람합니다.",
                               color=0xf8f5ff)
         embed.add_field(name="```%s 지휘관의 소지 포인트```" % authinfo["NAME"], value="```%d LP```" % authinfo["POINTS"], inline=False)
         if authinfo["DEBT"] > 0:
@@ -79,7 +80,7 @@ def pointsavior(channel, authinfo, dbpass):
         if int(tempvar["SAVING"]) <= 0:
             return channel.send("누군가 라피의 용돈을 전부 빌려가버렸어...이제 남은 용돈이 없어...")
         embed = discord.Embed(title="지휘관...... 혹시, 빈털털이...?",
-                              description="힘내 지휘관...작지만 이거라도 빌려줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
+                              description="힘내 지휘관...작지만 이거라도 줄게...(+ 100 LP)\n 현재까지 누군가 받아간 수 : %d\n라피의 남은 용돈 : %d LP" % (int(tempvar["COUNT"]+1), int(tempvar["SAVING"]-100)),
                               color=0xf8f5ff)
         return channel.send(embed=embed)
     else:
@@ -147,6 +148,7 @@ async def pointdonate(channel, args, authinfo, dbpass):
         await channel.send("지휘관, 사용법이 틀린 것 같아...")
 
 
+# 포인트벌이 함수
 async def pointearning(message, args, authinfo, dbpass):
     channel = message.channel
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
@@ -219,6 +221,7 @@ def makerandomstring():
     return res
 
 
+# 저금 부분 함수
 async def pointsaving(message, args, authinfo, dbpass):
     channel = message.channel
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
@@ -398,10 +401,11 @@ async def debtpayoff(message, args, saveinfo, dbpass):
                         value="```cs\n%d LP```" % saveinfo["DEBT"], inline=False)
         await message.channel.send(embed=embed)
         laffey = mclient.Laffey.Data.find_one({"ID": 1004})
-        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"SAVING": laffey["POINTS"]+int(int(args[3])/10.0)}})
+        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"SAVING": laffey["SAVING"]+int(int(args[3])/10.0)}})
         mclient.Laffey.Data.update_one({"ID": saveinfo["ID"]}, {"$set": saveinfo})
 
 
+# 투자 기능 함수
 async def pointinvest(message, args, authinfo, dbpass):
     channel = message.channel
     if len(args) == 2:
@@ -512,6 +516,7 @@ async def investbuy(channel, args, authinfo, dbpass):
                 break
         if investdata["PRICE"][int(args[3])] == 0:
             await channel.send("해당 투자 대상은 상장폐지가 된 상태야...")
+            return
         if investdata["PRICE"][int(args[3])] * int(args[4]) <= authinfo["POINTS"]:
             authinfo["POINTS"] -= investdata["PRICE"][int(args[3])] * int(args[4])
             embed = discord.Embed(title="투자", description="지휘관, 성공적으로 매수를 완료했어...",
@@ -609,3 +614,152 @@ def investuserdbsave(userdata, dbpass):
     mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Invest?retryWrites=true&w=majority" % dbpass)
     mclient.Invest.Userdata.update_one({"ID": userdata["ID"]}, {"$set": userdata})
 
+
+# 라피 복권 기능
+async def lottery(message, args, authinfo, dbpass):
+    channel = message.channel
+    if len(args) == 2:
+        embed = discord.Embed(title="복권", description="지휘관, 복권 사려고...?",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```명령어```",
+                        value="!라피 복권 [목록|종류] : 복권 종류을 열람합니다.\n" +
+                              "!라피 복권 정보 (이름) : 해당 복권에 대한 자세한 정보를 열람합니다. 제작중.\n" +
+                              "!라피 복권 구매 (이름) (개수) : 해당 복권을 구매합니다.\n" +
+                              "!라피 복권 로또 : 로또에 대해 열람합니다. 제작중.", inline=False)
+        embed.add_field(name="```도움말```",
+                        value="```cs\n1. 복권과 로또는 하루에 각각 '10장'까지 구매가 가능합니다." +
+                              "\n2. 로또는 매일 '오후 6시'에 추첨이 진행됩니다." +
+                              "\n3. 복권은 매일 '오전 0시'에 초기화됩니다.```", inline=False)
+        await channel.send(embed=embed)
+    elif args[2] in ["목록", "종류"]:
+        await lotterylist(channel, dbpass)
+    elif args[2] in ["정보"]:
+        await lotteryinfo(channel, args[4], dbpass)
+    elif args[2] in ["구매", "사기"]:
+        await lotterybuy(channel, args, authinfo, dbpass)
+    elif args[2] in ["로또"]:
+        await lotterylottery(channel, args, authinfo, dbpass)
+    else:
+        await channel.send("지휘관, 알 수 없는 명령어야...")
+
+
+async def lotterylist(channel, dbpass):
+    lotterydata = lotterydbload(0, dbpass, False)
+    lotlist = []
+    for i in range(0, len(lotterydata["NAME"])):
+        if lotterydata["COUNT"][i] <= 0:
+            lotlist.append(str(i + 1) + ". " + lotlist["NAME"][i] +
+                           " : 품절됨.")
+            continue
+        lotlist.append(str(i+1) + ". " + lotlist["NAME"][i] +
+                       " : 개당 " + str(lotlist["PRICE"][i]) +
+                       " LP\n  남은 수량 : "+str(lotlist["COUNT"][i])+" 개")
+    lotlist = "\n".join(lotlist)
+    embed = discord.Embed(title="복권", description="지휘관, 복권에 대해 궁금해...?",
+                          color=0xf8f5ff)
+    embed.set_thumbnail(
+        url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+    embed.add_field(name="```복권 목록```",
+                    value="```cs\n%s```" % lotlist, inline=False)
+    await channel.send(embed=embed)
+
+
+async def lotteryinfo(channel, name, dbpass):
+    await channel.send("제작중.")
+    return
+
+
+async def lotterybuy(channel, args, authinfo, dbpass):
+    lotterydata = lotterydbload(0, dbpass, False)
+    userdata = lotterydbload(authinfo["ID"], dbpass, True)
+    if len(args) != 5 or (args[4].isdigit() and int(args[4]) <= 0):
+        await channel.send("지휘관 사용법이 틀린 것 같아...")
+    elif args[3] in lotterydata["NAME"]:
+        if (userdata["COUNT"][0] + int(args[4])) > 10:
+            await channel.send("지휘관...이미 복권을 10번 구입했어...")
+            return
+        for i in range(0, len(lotterydata["NAME"])):
+            if args[3] == lotterydata["NAME"][i]:
+                args[3] = i
+                break
+        if lotterydata["COUNT"][int(args[3])] <= int(args[4]):
+            await channel.send("지휘관...남은 복권 양이 모자라...")
+            return
+        if lotterydata["PRICE"][int(args[3])] * int(args[4]) <= authinfo["POINTS"]:
+            authinfo["POINTS"] -= lotterydata["PRICE"][int(args[3])] * int(args[4])
+            result = []
+            total = 0
+            for i in range(0, int(args[4])):
+                res = lotterydata["DATA"][int(args[3])].pop()
+                authinfo["POINTS"] += lotterydata["WIN"][int(args[3])][res]
+                total += lotterydata["WIN"][int(args[3])][res]
+                result.append(str(i+1)+". "+res+" - 당첨금 : "+lotterydata["WIN"][int(args[3])][res]+" LP")
+            result.append("총 당첨금 : "+str(total)+" LP")
+            result = "\n".join(result)
+            embed = discord.Embed(title="복권", description="지휘관, 성공적으로 구매를 완료했어...",
+                                  color=0xf8f5ff)
+            embed.set_thumbnail(
+                url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+            embed.add_field(name="```%s 구매 결과```" % lotterydata["NAME"][int(args[3])],
+                            value="```cs\n%s```" % result, inline=False)
+            await channel.send(embed=embed)
+            mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+            mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
+            lotterydbsave(userdata, dbpass, True)
+            lotterydbsave(lotterydata, dbpass, False)
+        else:
+            await channel.send("지휘관, 소지 포인트가 모자란 것 같아...")
+    else:
+        await channel.send("지휘관, 그런 이름의 복권은 없어...")
+
+
+async def lotterylottery(channel, args, authinfo, dbpass):
+    await channel.send("제작중.")
+    return
+
+
+def lotterydbload(uid, dbpass, isuser):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    if isuser is False:
+        lotterydata = mclient.Laffey.Lottery.find_one({"ID": "SYSTEM"})
+        return lotterydata
+    else:
+        userdata = mclient.Laffey.Lottery.find_one({"ID": uid})
+        if userdata is None:
+            mclient.Laffey.Lottery.insert_one({"ID": uid, "LOTTERY": [], "COUNTS": [0, 0]})
+            userdata = mclient.Laffey.Lottery.find_one({"ID": uid})
+        return userdata
+
+
+def lotterydbsave(data, dbpass, isuser):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    if isuser is True:
+        mclient.Laffey.Lottery.update_one({"ID": data["ID"]}, {"$set": data})
+        return
+    else:
+        mclient.Laffey.Lottery.update_one({"ID": "SYSTEM"}, {"$set": data})
+        return
+
+
+def lotteryrestock(name, dbpass):
+    lotterydata = lotterydbload(0, dbpass, False)
+    if lotterydata is None:
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - DB Data Not Found")
+        return
+    num = -1
+    for i in range(0, len(lotterydata["NAME"])):
+        if name == lotterydata["NAME"][i]:
+            num = i
+            break
+    if num != -1:
+        lotterydata["DATA"][num] = []
+        for i in range(0, len(lotterydata["WINDATA"][num]["NAME"])):
+            for j in range(0, lotterydata["WINDATA"][num]["COUNT"][i]):
+                lotterydata["DATA"][num].append(lotterydata["WINDATA"][num]["NAME"][i])
+        lotterydata["COUNT"][num] = lotterydata["FIRSTCOUNT"][num]
+        lotterydbsave(lotterydata, dbpass, False)
+    else:
+        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - "+str(name)+" is Not Exist")
+    return

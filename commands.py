@@ -39,8 +39,9 @@ def bothelp(channel, args):
         embedhelp.add_field(name="!라피 포인트", value="포인트 관련 명령어를 확인합니다.", inline=False)
         embedhelp.add_field(name="!라피 도박", value="지휘관, 지휘관. 도박은 나빠...", inline=False)
         embedhelp.add_field(name="!라피 가챠", value="가챠는 나쁜 문명!", inline=False)
-        embedhelp.add_field(name="!라피 저금", value="지휘관, 포인트를 저금하려고...?", inline=False)
-        embedhelp.add_field(name="!라피 투자", value="지휘관, 포인트를 투자하려고...?", inline=False)
+        embedhelp.add_field(name="!라피 저금", value="저금 관련 활동을 수행합니다.", inline=False)
+        embedhelp.add_field(name="!라피 투자", value="투자 관련 명령어를 확인합니다.", inline=False)
+        embedhelp.add_field(name="!라피 복권", value="복권 관련 명령어를 확인합니다.", inline=False)
         embedhelp.add_field(name="!라피 포인트벌이", value="지휘관에게 포인트를 벌 수 있도록 일거리를 줄게...", inline=False)
         return channel.send(embed=embedhelp)
 
@@ -173,6 +174,10 @@ async def debug(client, message, args, authinfo, dbpass):
             print("[FORCED] ↓")
             await points.investrenew(client, dbpass)
             await message.channel.send("투자 가격 변동 완료.")
+        elif args[2] == "복권초기화":
+            print("[FORCED] ↓")
+            await points.lotteryrestock(args[3], dbpass)
+            await message.channel.send("복권 재보급 완료.")
         else:
             await message.channel.send("커맨드 인식 불가.")
     else:
