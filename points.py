@@ -773,7 +773,7 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
     elif len(args) == 4 and (args[3] in ["확인", "보유"]):
         balls = []
         for i in range(0, len(userdata["LAFFEYBALL"])):
-            temp = " ".join(userdata["LAFFEYBALL"][i])
+            temp = " ".join(str(userdata["LAFFEYBALL"][i]))
             balls.append(str(i+1) + ". " + str(temp))
         balls = "\n".join(balls)
         embed = discord.Embed(title="복권", description="지휘관, 지휘관이 가지고 있는 라피볼을 가져왔어...",
@@ -799,6 +799,7 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
                     return
                 authinfo["POINTS"] -= lotterydata["PRICE"]
                 userdata["LAFFEYBALL"].append([int(args[4]), int(args[5]), int(args[6]), int(args[7]), int(args[8])])
+                userdata["COUNTS"][1] += 1
                 lotterydbsave(userdata, dbpass, True)
                 mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
                 mclient.Laffey.Data.update_one({"ID": authinfo["ID"]}, {"$set": authinfo})
