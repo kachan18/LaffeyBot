@@ -174,7 +174,7 @@ async def debug(client, message, args, authinfo, dbpass):
             print("[FORCED] ↓")
             await points.investrenew(client, dbpass)
             await message.channel.send("투자 가격 변동 완료.")
-        elif args[2] == "복권초기화":
+        elif args[2] == "복권재보급":
             print("[FORCED] ↓")
             points.lotteryrestock(args[3], dbpass)
             await message.channel.send("복권 재보급 완료.")
