@@ -338,7 +338,7 @@ async def loan(message, args, saveinfo, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
         embed.add_field(name="```도움말```",
-                        value="!라피 저금 대출 (수량) : 지정한 수량만큼 포인트를 대출합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출 시 '대출액'의 '0.5배'가 '이자'로 추가됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
+                        value="!라피 저금 대출 (수량) : 지정한 수량만큼 포인트를 대출합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출의 이자는 대출 시 원금의 20%이며, 매 시간마다 복리 5%가 적용됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
                         value="```%d LP```" % saveinfo["POINTS"], inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
@@ -356,7 +356,7 @@ async def loan(message, args, saveinfo, dbpass):
     else:
         saveinfo["DEBTDATE"] = int(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y%m%d"))
         saveinfo["POINTS"] += int(args[3])
-        saveinfo["DEBT"] += int(int(args[3]) * 1.5)
+        saveinfo["DEBT"] += int(int(args[3]) * 1.2)
         embed = discord.Embed(title="아카시론", description="매번 고맙다냥~",
                               color=0xf8f5ff)
         if saveinfo["DEBT"] >= 5000:
@@ -365,7 +365,7 @@ async def loan(message, args, saveinfo, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/07/42/r545TkU2_o.png")
         embed.add_field(name="```도움말```",
-                        value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출 시 '대출액'의 '0.5배'가 '이자'로 추가됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
+                        value="!라피 저금 청산 (수량) : 입력한 수량만큼 빚을 청산합니다.\n빚이 존재하는 동안 지휘관의 계좌는 동결됩니다.\n대출의 이자는 대출 시 원금의 20%이며, 매 시간마다 복리 5%가 적용됩니다.\n대출 한도는 5000 LP 입니다.", inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 보유 포인트```" % saveinfo["NAME"],
                         value="```%d LP```" % saveinfo["POINTS"], inline=False)
         embed.add_field(name="```[ %s ] 지휘관의 남은 빛```" % saveinfo["NAME"],
@@ -402,8 +402,17 @@ async def debtpayoff(message, args, saveinfo, dbpass):
                         value="```cs\n%d LP```" % saveinfo["DEBT"], inline=False)
         await message.channel.send(embed=embed)
         laffey = mclient.Laffey.Data.find_one({"ID": 1004})
-        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"SAVING": laffey["SAVING"]+int(int(args[3])/10.0)}})
+        mclient.Laffey.Data.update_one({"ID": 1004}, {"$set": {"POINTS": laffey["POINTS"]+int(int(args[3])/20.0)}})
         mclient.Laffey.Data.update_one({"ID": saveinfo["ID"]}, {"$set": saveinfo})
+
+
+def loaninterest(dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    users = mclient.Laffey.Data.find({"DEBT": {"$gt": 0}})
+    for user in users:
+        user["DEBT"] = int(user["DEBT"]*1.05)
+        mclient.Laffey.Lottery.update_one({"ID": user["ID"]}, {"$set": user})
+    print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 아카시론 이자 추가 완료!")
 
 
 # 투자 기능 함수
