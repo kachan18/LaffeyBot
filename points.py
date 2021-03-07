@@ -164,11 +164,14 @@ async def pointearning(message, args, authinfo, dbpass):
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```현재 저장된 포인트```", value="%d LP" % earndata["EARNING"], inline=False)
         embed.add_field(name="```!라피 포인트벌이 타이핑 ```", value="타이핑을 통해 포인트를 벌 수 있습니다.", inline=False)
+        embed.add_field(name="```!라피 포인트벌이 계산 ```", value="계산을 통해 포인트를 벌 수 있습니다.", inline=False)
         embed.add_field(name="```!라피 포인트벌이 수령 ```", value="저장된 포인트를 수령합니다.", inline=False)
         await channel.send(embed=embed)
     else:
         if args[2] == "타이핑":
             await earningtyping(message, args, authinfo, dbpass)
+        elif args[2] == "계산":
+            await earningcalculate(message, args, authinfo, dbpass)
         elif args[2] == "수령":
             mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": 0}})
             await earningtake(message, earndata["EARNING"], authinfo, dbpass)
@@ -220,6 +223,69 @@ def makerandomstring():
         res.append(random.choice(stringlist))
     res = "".join(res)
     return res
+
+
+async def earningcalculate(message, args, authinfo, dbpass):
+    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+    caldata = mclient.Laffey.Pointearning.find_one({"ID": authinfo["ID"]})
+    if caldata is None:
+        mclient.Laffey.Pointearning.insert_one({"ID": authinfo["ID"], "EARNING": 0, "STRING": "letsearnpoints", "CALCULATE": {"LEN": 2, "NUM": [1, 1], "CAL": ["+"]}})
+        caldata = mclient.Laffey.Pointearning.find_one({"ID": authinfo["ID"]})
+    if len(args) == 3:
+        string = calstring(caldata["CALCULATE"])
+        embed = discord.Embed(title="포인트 벌이", description="지휘관에게 포인트를 벌 수 있도록 일거리를 줄게...",
+                              color=0xf8f5ff)
+        embed.set_thumbnail(
+            url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
+        embed.add_field(name="```방법```", value="!라피 포인트벌이 계산 (정답)", inline=False)
+        embed.add_field(name="```도움말```", value="지정된 랜덤한 계산을 수행하여 LP를 벌 수 있습니다. 매 1회마다 150 LP 가 지급됩니다.\n계산은 곱셈이든 덧셈이든 앞에 있는거부터 수행합니다.\n틀릴 경우 보상은 지급되지 않으며, 다음 계산으로 넘어갑니다.", inline=False)
+        embed.add_field(name="```[%s] 지휘관의 현재 지정 계산```" % authinfo["NAME"], value="%s" % string, inline=False)
+        await message.channel.send(embed=embed)
+    elif len(args) == 4:
+        answer = calanswer(caldata["CALCULATE"])
+        nextcal = makerandomcal()
+        nextstring = calstring(nextcal)
+        if int(args[3]) == answer:
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
+            await message.channel.send("지휘관, 정답이야. 다음 문제는 이거야...\n[%s] 지휘관의 다음 문제```%s```" % (authinfo["NAME"], nextstring))
+        else:
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
+            await message.channel.send("지휘관, 계산이 틀렸어...( 정답 : %d )\n[%s] 지휘관의 다음 문제```%s```" % (answer, authinfo["NAME"], nextstring))
+
+
+def calstring(data):
+    string = []
+    for i in range(0, data["LEN"]-1):
+        string.append(str(data["NUM"][i]))
+        string.append(str(data["CAL"][i]))
+    string.append(str(data["NUM"][-1])+" = ?")
+    string = " ".join(string)
+    return string
+
+
+def calanswer(data):
+    answer = data["NUM"][0]
+    for i in range(0, data["LEN"]-1):
+        if data["CAL"][i] == "+":
+            answer += data["NUM"][i+1]
+        elif data["CAL"][i] == "-":
+            answer -= data["NUM"][i+1]
+        elif data["CAL"][i] == "*":
+            answer *= data["NUM"][i+1]
+    return answer
+
+
+def makerandomcal():
+    data = {"LEN": random.randint(1, 5), "NUM": [], "CAL": []}
+    cal = ["+", "-", "+", "-", "+", "-", "*", "*"]
+    data["NUM"].append(random.randint(0, 100))
+    for i in range(0, data["LEN"]-1):
+        data["CAL"].append(random.choice(cal))
+        if data["CAL"][i] == "*":
+            data["NUM"].append(random.randint(0, 10))
+        else:
+            data["NUM"].append(random.randint(0, 100))
+    return data
 
 
 # 저금 부분 함수
