@@ -125,6 +125,8 @@ async def laffeybotloop():
     if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%H%M") == "0000":
         points.lotteryrestockall(dbpass)
         points.lotterylimitreset(dbpass)
+    if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%M") == "00":
+        points.loaninterest(dbpass)
     if datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%H%M") == "1800":
         await points.lotterytimeoflaffeyball(lottery_channel, dbpass)
 
