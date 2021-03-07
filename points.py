@@ -652,7 +652,7 @@ async def investrenew(channel, dbpass, isbot):
         del(investpre["SYSTEM"])
         mclient.Invest.System.update_one({"SYSTEM": "INVESTPRE"}, {"$set": investpre})
         for i in range(0, len(investdata["NAME"])):
-            investdata["PRICE"][i] = int(investdata["PRICE"][i] * (1.0 - (investdata["VARIANCE"][i] * ((random.random() * 2.0) - 1.0))))
+            investdata["PRICE"][i] += int(investdata["PRICE"][i] * investdata["VARIANCE"][i] * ((random.random() * 2.0) - 1.0))
             if investdata["PRICE"][i] <= 50:
                 print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - " + str(investdata["NAME"][i]) + " Bankrupted!")
                 investdata["PRICE"][i] = 0
