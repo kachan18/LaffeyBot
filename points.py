@@ -238,7 +238,7 @@ async def earningcalculate(message, args, authinfo, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```방법```", value="!라피 포인트벌이 계산 (정답)", inline=False)
-        embed.add_field(name="```도움말```", value="지정된 랜덤한 계산을 수행하여 LP를 벌 수 있습니다. 매 1회마다 150 LP 가 지급됩니다.\n계산은 곱셈이든 덧셈이든 앞에 있는거부터 수행합니다.\n틀릴 경우 보상은 지급되지 않으며, 다음 계산으로 넘어갑니다.", inline=False)
+        embed.add_field(name="```도움말```", value="지정된 랜덤한 계산을 수행하여 LP를 벌 수 있습니다. 매 1회마다 100 LP 가 지급됩니다.\n계산은 곱셈이든 덧셈이든 앞에 있는거부터 수행합니다.\n틀릴 경우 보상은 지급되지 않으며, 다음 계산으로 넘어갑니다.", inline=False)
         embed.add_field(name="```[%s] 지휘관의 현재 지정 계산```" % authinfo["NAME"], value="%s" % string, inline=False)
         await message.channel.send(embed=embed)
     elif len(args) == 4:
@@ -246,10 +246,10 @@ async def earningcalculate(message, args, authinfo, dbpass):
         nextcal = makerandomcal()
         nextstring = calstring(nextcal)
         if int(args[3]) == answer:
-            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 100, "CALCULATE": nextcal}})
             await message.channel.send("지휘관, 정답이야. 다음 문제는 이거야...\n[%s] 지휘관의 다음 문제```%s```" % (authinfo["NAME"], nextstring))
         else:
-            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"CALCULATE": nextcal}})
             await message.channel.send("지휘관, 계산이 틀렸어...( 정답 : %d )\n[%s] 지휘관의 다음 문제```%s```" % (answer, authinfo["NAME"], nextstring))
 
 
