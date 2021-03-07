@@ -238,7 +238,7 @@ async def earningcalculate(message, args, authinfo, dbpass):
         embed.set_thumbnail(
             url="https://images2.imgbox.com/20/b1/fi8X55Pc_o.png")
         embed.add_field(name="```방법```", value="!라피 포인트벌이 계산 (정답)", inline=False)
-        embed.add_field(name="```도움말```", value="지정된 랜덤한 계산을 수행하여 LP를 벌 수 있습니다. 매 1회마다 100 LP 가 지급됩니다.\n계산은 곱셈이든 덧셈이든 앞에 있는거부터 수행합니다.\n틀릴 경우 보상은 지급되지 않으며, 다음 계산으로 넘어갑니다.", inline=False)
+        embed.add_field(name="```도움말```", value="지정된 랜덤한 계산을 수행하여 LP를 벌 수 있습니다. 매 1회마다 150 LP 가 지급됩니다.\n계산은 곱셈이든 덧셈이든 앞에 있는거부터 수행합니다.\n틀릴 경우 보상은 지급되지 않으며, 다음 계산으로 넘어갑니다.", inline=False)
         embed.add_field(name="```[%s] 지휘관의 현재 지정 계산```" % authinfo["NAME"], value="%s" % string, inline=False)
         await message.channel.send(embed=embed)
     elif len(args) == 4:
@@ -246,10 +246,10 @@ async def earningcalculate(message, args, authinfo, dbpass):
         nextcal = makerandomcal()
         nextstring = calstring(nextcal)
         if int(args[3]) == answer:
-            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 100, "CALCULATE": nextcal}})
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
             await message.channel.send("지휘관, 정답이야. 다음 문제는 이거야...\n[%s] 지휘관의 다음 문제```%s```" % (authinfo["NAME"], nextstring))
         else:
-            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"CALCULATE": nextcal}})
+            mclient.Laffey.Pointearning.update_one({"ID": authinfo["ID"]}, {"$set": {"EARNING": caldata["EARNING"] + 150, "CALCULATE": nextcal}})
             await message.channel.send("지휘관, 계산이 틀렸어...( 정답 : %d )\n[%s] 지휘관의 다음 문제```%s```" % (answer, authinfo["NAME"], nextstring))
 
 
@@ -547,6 +547,10 @@ async def investinfo(channel, args, dbpass):
             if args[3] == investdata["NAME"][i]:
                 args[3] = i
                 break
+        comment = []
+        for i in range(0, len(investdata["COMMENT"][int(args[3])])):
+            comment.append(investdata["COMMENT"][int(args[3])])
+        comment = "\n".join(comment)
         embed = discord.Embed(title="투자", description="해당 종목에 대해 정보를 가져왔어...",
                               color=0xf8f5ff)
         embed.set_thumbnail(
@@ -558,9 +562,9 @@ async def investinfo(channel, args, dbpass):
         embed.add_field(name="```현재 상장가```",
                         value="%d LP" % investdata["PRICE"][int(args[3])], inline=False)
         embed.add_field(name="```등락폭```",
-                        value="%d" % investdata["VARIANCE"][int(args[3])], inline=False)
+                        value="%.3lf" % investdata["VARIANCE"][int(args[3])], inline=False)
         embed.add_field(name="```종합평가```",
-                        value="%s" % investdata["COMMENT"][int(args[3])], inline=False)
+                        value="%s" % comment, inline=False)
         await channel.send(embed=embed)
     else:
         await channel.send("지휘관, 그런 이름의 투자처는 없어...")
@@ -850,7 +854,10 @@ async def lotterylaffeyball(channel, args, authinfo, dbpass):
         for i in range(0, len(userdata["LAFFEYBALL"])):
             temp = " ".join(str(userdata["LAFFEYBALL"][i]))
             balls.append(str(i+1) + ". " + str(temp))
-        balls = "\n".join(balls)
+        if not balls:
+            balls = "구매하지 않았음"
+        else:
+            balls = "\n".join(balls)
         embed = discord.Embed(title="복권", description="지휘관, 지휘관이 가지고 있는 라피볼을 가져왔어...",
                               color=0xf8f5ff)
         embed.set_thumbnail(
