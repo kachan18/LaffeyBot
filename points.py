@@ -411,7 +411,7 @@ def loaninterest(dbpass):
     users = mclient.Laffey.Data.find({"DEBT": {"$gt": 0}})
     for user in users:
         user["DEBT"] = int(user["DEBT"]*1.05)
-        mclient.Laffey.Lottery.update_one({"ID": user["ID"]}, {"$set": user})
+        mclient.Laffey.Data.update_one({"ID": user["ID"]}, {"$set": user})
     print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 아카시론 이자 추가 완료!")
 
 
