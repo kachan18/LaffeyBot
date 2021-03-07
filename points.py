@@ -881,7 +881,7 @@ def lotteryrestockall(dbpass):
         random.shuffle(lotterydata["DATA"][k])
         lotterydata["COUNT"][k] = lotterydata["FIRSTCOUNT"][k]
         lotterydbsave(lotterydata, dbpass, False)
-        print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 모든 복권 재보급 완료!")
+    print(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y-%m-%d %H:%M:%S %Z") + " - 모든 복권 재보급 완료!")
     return
 
 
