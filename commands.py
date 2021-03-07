@@ -38,7 +38,6 @@ def bothelp(channel, args):
         embedhelp.add_field(name="!라피 출석체크", value="출석체크를 수행합니다.", inline=False)
         embedhelp.add_field(name="!라피 포인트", value="포인트 관련 명령어를 확인합니다.", inline=False)
         embedhelp.add_field(name="!라피 도박", value="지휘관, 지휘관. 도박은 나빠...", inline=False)
-        embedhelp.add_field(name="!라피 가챠", value="가챠는 나쁜 문명!", inline=False)
         embedhelp.add_field(name="!라피 저금", value="저금 관련 활동을 수행합니다.", inline=False)
         embedhelp.add_field(name="!라피 투자", value="투자 관련 명령어를 확인합니다.", inline=False)
         embedhelp.add_field(name="!라피 복권", value="복권 관련 명령어를 확인합니다.", inline=False)
@@ -56,7 +55,6 @@ def botinfo(channel):
     return channel.send(embed=embed)
 
 
-# 제작중
 def attendcheck(channel, authinfo, dbpass):
     if authinfo["DCTime"] < int(datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y%m%d")):
         if authinfo["DCTime"] == int((datetime.datetime.now(tz=datetime.timezone(datetime.timedelta(hours=9)))-datetime.timedelta(days=1)).strftime("%Y%m%d")):

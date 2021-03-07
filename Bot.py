@@ -6,7 +6,6 @@ import os
 import datetime
 import commands
 import gamblefunction
-import gachafunction
 import points
 
 
@@ -32,19 +31,19 @@ async def on_reaction_add(reaction, user):
     channel = reaction.message.channel
     if user.bot:
         return None
-    mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
-    db = mclient.Laffey.Data
-    authinfo = db.find_one({"ID": user.id})
-    if authinfo["ISONREACT"] is False:
-        db.update_one({"ID": user.id}, {"$set": {"ISONREACT": True}})
-        await gachafunction.letsgachaonreact(reaction, user, dbpass)
+    if reaction.message.author.id == client.user.id:
+        mclient = pymongo.MongoClient("mongodb+srv://Admin:%s@botdb.0iuoe.mongodb.net/Laffey?retryWrites=true&w=majority" % dbpass)
+        db = mclient.Laffey.Data
+        authinfo = db.find_one({"ID": user.id})
+        if authinfo["ISONREACT"] is False:
+            db.update_one({"ID": user.id}, {"$set": {"ISONREACT": True}})
 
-        await gamblefunction.dicegameonreact(reaction, user, dbpass)
-        await gamblefunction.updownonreact(reaction, user, dbpass)
-        await gamblefunction.blackjackonreact(reaction, user, dbpass)
-        await gamblefunction.laffeyduelonreact(reaction, user, dbpass)
-        await gamblefunction.drawpokeronreact(reaction, user, dbpass)
-        db.update_one({"ID": user.id}, {"$set": {"ISONREACT": False}})
+            await gamblefunction.dicegameonreact(reaction, user, dbpass)
+            await gamblefunction.updownonreact(reaction, user, dbpass)
+            await gamblefunction.blackjackonreact(reaction, user, dbpass)
+            await gamblefunction.laffeyduelonreact(reaction, user, dbpass)
+            await gamblefunction.drawpokeronreact(reaction, user, dbpass)
+            db.update_one({"ID": user.id}, {"$set": {"ISONREACT": False}})
 
 
 @client.event
@@ -59,8 +58,6 @@ async def on_message(message):
     authinfo = db.find_one({"ID": uid})
 
     if message.author.bot:  # 봇에는 반응하지 않도록.
-        await gachafunction.letsgachaaddreact(message, client)
-
         await gamblefunction.dicegamefirstreact(message, client)
         await gamblefunction.updownfirstreact(message, client)
         await gamblefunction.blackjackfirstreact(message, client)
@@ -94,8 +91,6 @@ async def on_message(message):
                 await commands.attendcheck(channel, authinfo, dbpass)
             elif cmdline[1] == "도박":
                 await commands.gamble(message, cmdline, authinfo, dbpass)
-            elif cmdline[1] == "가챠":
-                await commands.gacha(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "포인트벌이":
                 await points.pointearning(message, cmdline, authinfo, dbpass)
             elif cmdline[1] == "저금":
